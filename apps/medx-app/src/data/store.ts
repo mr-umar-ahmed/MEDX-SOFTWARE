@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { verifyLicenseToken, checkLicenseHeartbeat, type LicenseData } from "../core/licensing";
 import type {
   LabSettings, Patient, Doctor, StaffUser, Order, OrderItem, Payment, ResultValue,
   OrderSource, OrderPriority, SampleStatus, QueueToken, Estimate, EstimateItem,
@@ -95,6 +96,8 @@ interface StoreState {
   audit: AuditEntry[];
   seq: Record<string, number>;
   rolePermissions: Record<UserRole, string[]>;
+  licenseToken?: string;
+  activeLicense: LicenseData | null;
 
   // settings & users
   updateSettings: (s: Partial<LabSettings>) => void;
@@ -103,6 +106,7 @@ interface StoreState {
   setCurrentUser: (id: string) => void;
   currentUserName: () => string;
   updateRolePermissions: (role: UserRole, permissions: string[]) => void;
+  activateLicense: (token: string) => Promise<boolean>;
 
   // people
   upsertPatient: (p: Omit<Patient, "id" | "uhid" | "createdAt"> & { id?: string }) => Patient;
@@ -196,6 +200,8 @@ export const useStore = create<StoreState>()(
         Technician: ["/", "/samples", "/results", "/reports", "/reagents", "/suppliers", "/qc", "/temperature", "/calibrations"],
         Pathologist: ["/", "/results", "/verification", "/reports", "/qc", "/temperature", "/calibrations", "/sops"]
       },
+      licenseToken: undefined,
+      activeLicense: null,
 
       /* ---------- settings & users ---------- */
       updateSettings: (s) => {
@@ -214,6 +220,15 @@ export const useStore = create<StoreState>()(
           rolePermissions: { ...st.rolePermissions, [role]: permissions }
         }));
         get().log("permissions.update", `Updated permissions for ${role}`);
+      },
+      activateLicense: async (token) => {
+        const verified = await verifyLicenseToken(token);
+        if (verified) {
+          set({ licenseToken: token, activeLicense: verified });
+          get().log("license.activate", `Activated ${verified.tier} license for ${verified.labName}`);
+          return true;
+        }
+        return false;
       },
 
       /* ---------- people ---------- */
@@ -493,3 +508,30 @@ export function orderPaidPaise(o: Order): number {
 export function orderDuePaise(o: Order): number {
   return Math.max(0, o.grandTotalPaise - orderPaidPaise(o));
 }
+
+// Auto-run license token verification on startup
+if (typeof window !== "undefined") {
+  setTimeout(async () => {
+    try {
+      const token = useStore.getState().licenseToken;
+      if (token) {
+        const verified = await verifyLicenseToken(token);
+        if (verified) {
+          useStore.setState({ activeLicense: verified });
+          console.log(`✓ Active license verified: ${verified.tier} Tier for ${verified.labName}`);
+          // Check-in heartbeat verification check
+          checkLicenseHeartbeat(verified.licenseKey, () => {
+            useStore.setState({ licenseToken: undefined, activeLicense: null });
+            alert("Your MedX License key has been revoked by the system administrator.");
+          });
+        } else {
+          useStore.setState({ activeLicense: null });
+          console.warn("⚠️ Stored license token failed verification.");
+        }
+      }
+    } catch (err) {
+      console.error("Startup license check failed:", err);
+    }
+  }, 150);
+}
+

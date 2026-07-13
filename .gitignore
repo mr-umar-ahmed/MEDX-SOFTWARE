@@ -20,3 +20,6 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# Local SQLite & JSON database stores
+Database/

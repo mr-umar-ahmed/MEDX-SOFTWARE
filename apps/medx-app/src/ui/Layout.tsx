@@ -1,5 +1,6 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useStore } from "../data/store";
+import { isRouteAllowed, getRouteTierRequired } from "../core/licensing";
 
 interface NavItem { to: string; label: string; icon: string; end?: boolean }
 interface NavGroup { title: string; items: NavItem[] }
@@ -96,10 +97,16 @@ export default function Layout() {
   const currentUserId = useStore((s) => s.currentUserId);
   const users = useStore((s) => s.users);
   const rolePermissions = useStore((s) => s.rolePermissions);
+  const activeLicense = useStore((s) => s.activeLicense);
 
   const currentUser = users.find((u) => u.id === currentUserId);
   const role = currentUser?.role || "Receptionist";
   const allowed = rolePermissions?.[role] || [];
+  const tier = activeLicense?.tier || "Starter";
+
+  const location = useLocation();
+  const routeAllowed = isRouteAllowed(location.pathname, tier);
+  const requiredTier = getRouteTierRequired(location.pathname);
 
   return (
     <div className="app">
@@ -112,7 +119,7 @@ export default function Layout() {
           </div>
         </div>
         {GROUPS.map((g) => {
-          const visibleItems = g.items.filter((item) => allowed.includes(item.to));
+          const visibleItems = g.items.filter((item) => allowed.includes(item.to) && isRouteAllowed(item.to, tier));
           if (visibleItems.length === 0) return null;
           return (
             <div key={g.title} style={{ marginBottom: 6 }}>
@@ -130,11 +137,28 @@ export default function Layout() {
         })}
         <div className="sidebar-foot">
           <div style={{ color: "#cbd5e1", fontWeight: 700 }}>{settings.name}</div>
-          <div style={{ color: "#64748b" }}>v0.2.0 · ● Working offline</div>
+          <div style={{ color: "#64748b" }}>v0.2.0 · ● {activeLicense ? `${activeLicense.tier} Tier` : "Working offline"}</div>
         </div>
       </aside>
       <div className="main">
-        <Outlet />
+        {routeAllowed ? <Outlet /> : <LockedScreen requiredTier={requiredTier} />}
+      </div>
+    </div>
+  );
+}
+
+function LockedScreen({ requiredTier }: { requiredTier: string }) {
+  return (
+    <div style={{ display: "grid", placeItems: "center", minHeight: "65vh" }}>
+      <div className="card card-pad" style={{ maxWidth: 440, textAlign: "center", padding: "40px" }}>
+        <div style={{ fontSize: "52px", marginBottom: "16px" }}>🔒</div>
+        <h2 style={{ marginBottom: "12px", fontSize: "20px", fontWeight: 800 }}>{requiredTier} Module Gated</h2>
+        <p className="muted" style={{ fontSize: "14px", lineHeight: 1.6, marginBottom: "28px" }}>
+          This page requires a **MedX {requiredTier} License**. Your system is currently operating under the free **Starter** tier.
+        </p>
+        <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
+          <NavLink to="/settings" className="btn btn-primary">Activate License Key</NavLink>
+        </div>
       </div>
     </div>
   );
