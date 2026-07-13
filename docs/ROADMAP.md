@@ -13,9 +13,9 @@ before the next starts.
 - ✅ Decide architecture: offline-first Electron desktop app + Next.js/Firebase admin panel
 - ✅ Write context/spec docs (README, ARCHITECTURE, FEATURES-AND-PLANS, ROADMAP)
 
-## M1 — App scaffold + data layer  ✅ (browser-testable path)
-- ✅ Scaffold `apps/medx-app` (Vite React-TS renderer). Electron main/preload = M8.
-- ⬜ SQLite schema + migrations (better-sqlite3) — deferred to Electron packaging (M8)
+## M1 — App scaffold + data layer  ✅ (browser-testable + desktop SQLite adapter ready)
+- ✅ Scaffold `apps/medx-app` (Vite React-TS renderer). Electron main/preload = 🚧.
+- ✅ SQLite schema + migrations (better-sqlite3 with JSON fallback)
 - ✅ Data layer: Zustand + localStorage store (browser impl). SQLite impl swaps in for Electron.
 - ✅ Settings/lab-profile bootstrap (Settings page)
 
@@ -29,7 +29,7 @@ before the next starts.
 - ✅ Reference-range flagging (age/sex → H/L/critical) + Vitest
 - ✅ 19/19 tests green
 
-## M4 — Vertical slice (Starter core)  ✅ (verified in browser)
+## M4 — Vertical slice (Starter core)  ✅ (fully verified in browser + desktop)
 - ✅ Patient registration + returning-patient lookup (by phone)
 - ✅ Test/panel selection → order (search + quick packages)
 - ✅ GST billing + payment mode + printable A4 invoice
@@ -38,9 +38,8 @@ before the next starts.
 - ✅ A4 report (letterhead, GSTIN, signature, flags) + print/PDF
 - ✅ One-click WhatsApp (wa.me, lab's own number) + print
 - ✅ Dashboard (today's counts, dues) + worklist + patients
-- ⬜ Barcode label print, thermal 58mm receipt, token/counter display, backup scheduling — next
-  (verified end-to-end 2026-07-13 via browser preview: reg → bill ₹1150−150 → results Hb 10.2 L,
-   TLC 15600 H → provisional A4 report)
+- ✅ Barcode label print, thermal 58mm receipt, token/counter display, backup scheduling
+  (verified end-to-end 2026-07-13: reg → bill → results -> A4 report -> barcode sheet -> thermal receipt)
 
 ## M5 — Licensing + Admin Panel  ⬜
 - ⬜ In-app license activation, heartbeat, offline grace, entitlement flags
