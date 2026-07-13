@@ -15,6 +15,60 @@ export interface LicenseRecord {
   devices?: Array<{ deviceId: string; hostname: string; lastSeenAt: string }>;
 }
 
+export interface CustomerNote {
+  at: string;
+  text: string;
+  author: string;
+}
+
+export interface CustomerRecord {
+  id: string;
+  labName: string;
+  contactPhone: string;
+  location: string;
+  gstin?: string;
+  stage: "Lead" | "Trial" | "Active" | "Expired" | "Churned";
+  notes: CustomerNote[];
+  createdAt: string;
+}
+
+export interface PaymentRecord {
+  id: string;
+  customerId: string;
+  customerName: string;
+  amountPaidPaise: number;
+  mode: "UPI" | "Bank Transfer" | "Card" | "Cash";
+  referenceNo?: string;
+  issuedAt: string;
+  description?: string;
+}
+
+export interface TicketMessage {
+  at: string;
+  text: string;
+  sender: "Staff" | "Customer";
+}
+
+export interface TicketRecord {
+  id: string;
+  customerId: string;
+  customerName: string;
+  subject: string;
+  description: string;
+  priority: "Low" | "Medium" | "High" | "Critical";
+  status: "Open" | "In Progress" | "Resolved";
+  messages: TicketMessage[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AppConfig {
+  allowAbdm: boolean;
+  allowWhatsApp: boolean;
+  allowSms: boolean;
+  maintenanceMode: boolean;
+}
+
 const PRIVATE_KEY_JWK = {
   kty: "EC",
   crv: "P-256",
@@ -194,5 +248,157 @@ export async function registerHeartbeat(
   
   await saveLicenses(all);
   return { success: true, active: true };
+}
+
+// --- CRM Helpers ---
+export async function getCustomers(): Promise<CustomerRecord[]> {
+  const dbDir = path.join(process.cwd(), "..", "..", "Database");
+  const filePath = path.join(dbDir, "admin-customers.json");
+  if (!fs.existsSync(filePath)) return [];
+  try {
+    return JSON.parse(fs.readFileSync(filePath, "utf-8"));
+  } catch {
+    return [];
+  }
+}
+
+export async function saveCustomers(list: CustomerRecord[]): Promise<void> {
+  const dbDir = path.join(process.cwd(), "..", "..", "Database");
+  const filePath = path.join(dbDir, "admin-customers.json");
+  fs.writeFileSync(filePath, JSON.stringify(list, null, 2), "utf-8");
+}
+
+export async function createCustomer(
+  labName: string,
+  contactPhone: string,
+  location: string,
+  gstin?: string
+): Promise<CustomerRecord> {
+  const record: CustomerRecord = {
+    id: "CUST-" + Math.random().toString(36).substring(2, 8).toUpperCase(),
+    labName,
+    contactPhone,
+    location,
+    gstin,
+    stage: "Lead",
+    notes: [],
+    createdAt: new Date().toISOString(),
+  };
+  const list = await getCustomers();
+  list.unshift(record);
+  await saveCustomers(list);
+  return record;
+}
+
+// --- Billing Helpers ---
+export async function getPayments(): Promise<PaymentRecord[]> {
+  const dbDir = path.join(process.cwd(), "..", "..", "Database");
+  const filePath = path.join(dbDir, "admin-payments.json");
+  if (!fs.existsSync(filePath)) return [];
+  try {
+    return JSON.parse(fs.readFileSync(filePath, "utf-8"));
+  } catch {
+    return [];
+  }
+}
+
+export async function savePayments(list: PaymentRecord[]): Promise<void> {
+  const dbDir = path.join(process.cwd(), "..", "..", "Database");
+  const filePath = path.join(dbDir, "admin-payments.json");
+  fs.writeFileSync(filePath, JSON.stringify(list, null, 2), "utf-8");
+}
+
+export async function createPayment(
+  customerId: string,
+  customerName: string,
+  amountPaidPaise: number,
+  mode: PaymentRecord["mode"],
+  referenceNo?: string,
+  description?: string
+): Promise<PaymentRecord> {
+  const record: PaymentRecord = {
+    id: "PAY-" + Math.random().toString(36).substring(2, 8).toUpperCase(),
+    customerId,
+    customerName,
+    amountPaidPaise,
+    mode,
+    referenceNo,
+    description,
+    issuedAt: new Date().toISOString(),
+  };
+  const list = await getPayments();
+  list.unshift(record);
+  await savePayments(list);
+  return record;
+}
+
+// --- Tickets Helpers ---
+export async function getTickets(): Promise<TicketRecord[]> {
+  const dbDir = path.join(process.cwd(), "..", "..", "Database");
+  const filePath = path.join(dbDir, "admin-tickets.json");
+  if (!fs.existsSync(filePath)) return [];
+  try {
+    return JSON.parse(fs.readFileSync(filePath, "utf-8"));
+  } catch {
+    return [];
+  }
+}
+
+export async function saveTickets(list: TicketRecord[]): Promise<void> {
+  const dbDir = path.join(process.cwd(), "..", "..", "Database");
+  const filePath = path.join(dbDir, "admin-tickets.json");
+  fs.writeFileSync(filePath, JSON.stringify(list, null, 2), "utf-8");
+}
+
+export async function createTicket(
+  customerId: string,
+  customerName: string,
+  subject: string,
+  description: string,
+  priority: TicketRecord["priority"]
+): Promise<TicketRecord> {
+  const record: TicketRecord = {
+    id: "TCK-" + Math.random().toString(36).substring(2, 8).toUpperCase(),
+    customerId,
+    customerName,
+    subject,
+    description,
+    priority,
+    status: "Open",
+    messages: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  const list = await getTickets();
+  list.unshift(record);
+  await saveTickets(list);
+  return record;
+}
+
+// --- Config Helpers ---
+export async function getGlobalConfig(): Promise<AppConfig> {
+  const dbDir = path.join(process.cwd(), "..", "..", "Database");
+  const filePath = path.join(dbDir, "admin-config.json");
+  if (!fs.existsSync(filePath)) {
+    const defaultConfig: AppConfig = {
+      allowAbdm: true,
+      allowWhatsApp: true,
+      allowSms: true,
+      maintenanceMode: false,
+    };
+    fs.writeFileSync(filePath, JSON.stringify(defaultConfig, null, 2), "utf-8");
+    return defaultConfig;
+  }
+  try {
+    return JSON.parse(fs.readFileSync(filePath, "utf-8"));
+  } catch {
+    return { allowAbdm: true, allowWhatsApp: true, allowSms: true, maintenanceMode: false };
+  }
+}
+
+export async function saveGlobalConfig(config: AppConfig): Promise<void> {
+  const dbDir = path.join(process.cwd(), "..", "..", "Database");
+  const filePath = path.join(dbDir, "admin-config.json");
+  fs.writeFileSync(filePath, JSON.stringify(config, null, 2), "utf-8");
 }
 
