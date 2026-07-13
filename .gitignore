@@ -1,0 +1,22 @@
+# dependencies
+node_modules/
+
+# local env files
+.env*.local
+
+# log files
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor configurations
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

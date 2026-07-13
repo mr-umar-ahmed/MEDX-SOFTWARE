@@ -1,0 +1,141 @@
+import { NavLink, Outlet } from "react-router-dom";
+import { useStore } from "../data/store";
+
+interface NavItem { to: string; label: string; icon: string; end?: boolean }
+interface NavGroup { title: string; items: NavItem[] }
+
+const GROUPS: NavGroup[] = [
+  {
+    title: "Front Desk",
+    items: [
+      { to: "/", label: "Dashboard", icon: "▤", end: true },
+      { to: "/queue", label: "Queue / Tokens", icon: "🎫" },
+      { to: "/patients/new", label: "New Patient", icon: "👤" },
+      { to: "/new", label: "New Order", icon: "🧾" },
+      { to: "/estimates", label: "Estimates", icon: "📝" },
+    ],
+  },
+  {
+    title: "Lab",
+    items: [
+      { to: "/samples", label: "Sample Tracking", icon: "🧪" },
+      { to: "/results", label: "Result Entry", icon: "⌨" },
+      { to: "/verification", label: "Verification", icon: "✅" },
+    ],
+  },
+  {
+    title: "Reports",
+    items: [
+      { to: "/reports", label: "Report List", icon: "📄" },
+      { to: "/delivery", label: "Delivery Status", icon: "📨" },
+    ],
+  },
+  {
+    title: "Billing",
+    items: [
+      { to: "/invoices", label: "Invoices", icon: "₹" },
+      { to: "/payments", label: "Payments", icon: "💳" },
+      { to: "/outstanding", label: "Outstanding", icon: "⏰" },
+      { to: "/tpa", label: "TPA Claims", icon: "🛡" },
+    ],
+  },
+  {
+    title: "Doctors",
+    items: [
+      { to: "/doctors", label: "Doctor List", icon: "🩺" },
+      { to: "/commission", label: "Commission", icon: "🤝" },
+      { to: "/mou", label: "MOU Clients", icon: "📇" },
+      { to: "/corporate", label: "Corporate Billing", icon: "🏢" },
+    ],
+  },
+  {
+    title: "Appointments",
+    items: [
+      { to: "/calendar", label: "Calendar View", icon: "📅" },
+      { to: "/home-collection", label: "Home Collection", icon: "🏠" },
+    ],
+  },
+  {
+    title: "Inventory",
+    items: [
+      { to: "/reagents", label: "Reagents", icon: "🧴" },
+      { to: "/suppliers", label: "Suppliers", icon: "🚚" },
+    ],
+  },
+  {
+    title: "Quality",
+    items: [
+      { to: "/qc", label: "QC Logs", icon: "📈" },
+      { to: "/temperature", label: "Temperature", icon: "🌡" },
+      { to: "/calibrations", label: "Calibrations", icon: "🎚" },
+      { to: "/sops", label: "SOPs", icon: "📚" },
+      { to: "/audit", label: "Audit", icon: "🔍" },
+    ],
+  },
+  {
+    title: "Analytics",
+    items: [
+      { to: "/analytics", label: "360 Dashboard", icon: "🧭" },
+      { to: "/mis", label: "MIS Reports", icon: "📊" },
+    ],
+  },
+  {
+    title: "Settings",
+    items: [
+      { to: "/settings", label: "Lab Profile", icon: "🏷" },
+      { to: "/users", label: "Users", icon: "👥" },
+      { to: "/report-template", label: "Report Template", icon: "🖋" },
+      { to: "/backup", label: "Backup", icon: "💾" },
+      { to: "/abdm", label: "ABDM", icon: "🇮🇳" },
+    ],
+  },
+];
+
+export default function Layout() {
+  const settings = useStore((s) => s.settings);
+  const currentUserId = useStore((s) => s.currentUserId);
+  const users = useStore((s) => s.users);
+  const rolePermissions = useStore((s) => s.rolePermissions);
+
+  const currentUser = users.find((u) => u.id === currentUserId);
+  const role = currentUser?.role || "Receptionist";
+  const allowed = rolePermissions?.[role] || [];
+
+  return (
+    <div className="app">
+      <aside className="sidebar no-print" style={{ overflowY: "auto" }}>
+        <div className="brand">
+          <div className="brand-mark">M</div>
+          <div>
+            <b>MedX</b>
+            <div style={{ fontSize: 11, color: "var(--primary)" }}>Lab Management</div>
+          </div>
+        </div>
+        {GROUPS.map((g) => {
+          const visibleItems = g.items.filter((item) => allowed.includes(item.to));
+          if (visibleItems.length === 0) return null;
+          return (
+            <div key={g.title} style={{ marginBottom: 6 }}>
+              <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: "0.1em", color: "#64748b", padding: "10px 12px 4px", textTransform: "uppercase" }}>{g.title}</div>
+              <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                {visibleItems.map((n) => (
+                  <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => "nav-item" + (isActive ? " active" : "")} style={{ padding: "7px 12px", fontSize: 13.5 }}>
+                    <span className="nav-icon">{n.icon}</span>
+                    {n.label}
+                  </NavLink>
+                ))}
+              </nav>
+            </div>
+          );
+        })}
+        <div className="sidebar-foot">
+          <div style={{ color: "#cbd5e1", fontWeight: 700 }}>{settings.name}</div>
+          <div style={{ color: "#64748b" }}>v0.2.0 · ● Working offline</div>
+        </div>
+      </aside>
+      <div className="main">
+        <Outlet />
+      </div>
+    </div>
+  );
+}
