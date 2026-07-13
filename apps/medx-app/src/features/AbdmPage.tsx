@@ -1,5 +1,5 @@
 import { useStore } from "../data/store";
-import { Page, Section, Field } from "../ui/bits";
+import { Page, Field } from "../ui/bits";
 import { useState } from "react";
 
 export default function AbdmPage() {

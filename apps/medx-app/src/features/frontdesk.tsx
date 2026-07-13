@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useStore } from "../data/store";
 import { formatINR, rupeesToPaise } from "../core/money";
-import { fmtDateTime, ageString, sexLabel } from "../lib/format";
+import { fmtDateTime, sexLabel } from "../lib/format";
 import type { Sex } from "../core/ranges";
 import type { EstimateItem } from "../data/types";
 import { searchCatalog } from "../catalog";

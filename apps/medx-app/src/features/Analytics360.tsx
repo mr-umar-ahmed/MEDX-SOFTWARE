@@ -12,7 +12,7 @@ function isThisMonth(iso: string) {
 }
 
 export default function Analytics360() {
-  const { orders, patients, doctors, getPatient, getDoctor } = useStore();
+  const { orders, patients, getDoctor } = useStore();
 
   const todayOrders = orders.filter((o) => isToday(o.createdAt));
   const monthOrders = orders.filter((o) => isThisMonth(o.createdAt));
@@ -46,7 +46,6 @@ export default function Analytics360() {
 
   // Pending stats
   const pendingReports = orders.filter((o) => o.status !== "reported" && o.status !== "delivered").length;
-  const pendingSamples = orders.reduce((s, o) => s + o.items.filter((it) => it.sampleStatus === "pending").length, 0);
 
   return (
     <Page title="360° Analytics Dashboard" sub="Comprehensive lab performance overview.">

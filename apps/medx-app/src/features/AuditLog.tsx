@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useStore } from "../data/store";
 import { fmtDateTime } from "../lib/format";
-import { Page, Section, Empty, downloadCSV } from "../ui/bits";
+import { Page, Empty, downloadCSV } from "../ui/bits";
 
 export default function AuditLog() {
   const store = useStore();

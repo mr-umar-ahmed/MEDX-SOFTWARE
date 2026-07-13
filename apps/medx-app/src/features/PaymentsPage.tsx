@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useStore, orderDuePaise, orderPaidPaise } from "../data/store";
+import { useStore, orderDuePaise } from "../data/store";
 import { formatINR, rupeesToPaise } from "../core/money";
-import { fmtDateTime, ageString } from "../lib/format";
+import { fmtDateTime } from "../lib/format";
 import { Page, Section, Field, Empty } from "../ui/bits";
 import type { Payment } from "../data/types";
 

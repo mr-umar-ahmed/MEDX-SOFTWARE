@@ -1,16 +1,27 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 import type {
   LabSettings, Patient, Doctor, StaffUser, Order, OrderItem, Payment, ResultValue,
   OrderSource, OrderPriority, SampleStatus, QueueToken, Estimate, EstimateItem,
   TpaClaim, MouClient, CorporateBill, CommissionPayout, Appointment, HomeVisit,
   Reagent, StockMovement, Supplier, QcLog, TemperatureLog, Calibration, SopDoc, AuditEntry,
+  UserRole,
 } from "./types";
 import type { Sex } from "../core/ranges";
 import { evaluate, ageInDays } from "../core/ranges";
 import { computeInvoice, type LineInput } from "../core/gst";
 import { financialYear, formatInvoiceNo, formatAccessionNo, dayKey } from "../core/numbering";
 import { getTest } from "../catalog";
+
+declare global {
+  interface Window {
+    medx?: {
+      getStore: (key: string) => Promise<string | null>;
+      setStore: (key: string, value: string) => Promise<void>;
+      removeStore: (key: string) => Promise<void>;
+    };
+  }
+}
 
 const DEFAULT_SETTINGS: LabSettings = {
   name: "MedX Diagnostic Laboratory",
@@ -456,7 +467,23 @@ export const useStore = create<StoreState>()(
       getDoctor: (id) => (id ? get().doctors.find((d) => d.id === id) : undefined),
       getOrder: (id) => get().orders.find((o) => o.id === id),
     }),
-    { name: "medx-store-v1" },
+    {
+      name: "medx-store-v1",
+      storage: createJSONStorage(() => ({
+        getItem: (name) => {
+          if (window.medx) return window.medx.getStore(name);
+          return localStorage.getItem(name);
+        },
+        setItem: (name, value) => {
+          if (window.medx) return window.medx.setStore(name, value);
+          localStorage.setItem(name, value);
+        },
+        removeItem: (name) => {
+          if (window.medx) return window.medx.removeStore(name);
+          localStorage.removeItem(name);
+        }
+      }))
+    },
   ),
 );
 

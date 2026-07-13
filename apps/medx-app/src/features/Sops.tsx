@@ -20,7 +20,6 @@ export default function Sops() {
     reset(); setShow(false);
   }
 
-  const categories = [...new Set(store.sops.map((s) => s.category))];
 
   return (
     <Page title="Standard Operating Procedures" sub="Maintain SOP document registry for NABL/ISO compliance." actions={

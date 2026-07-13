@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Page, Section } from "../ui/bits";
+import { Page } from "../ui/bits";
 
 export default function BackupPage() {
   const [imported, setImported] = useState(false);

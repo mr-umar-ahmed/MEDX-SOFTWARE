@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useStore, orderDuePaise } from "../data/store";
 import { formatINR } from "../core/money";
-import { fmtDate, fmtDateTime, ageString } from "../lib/format";
+import { fmtDate } from "../lib/format";
 import { Page, Empty } from "../ui/bits";
 import { StatusBadge } from "./Dashboard";
 

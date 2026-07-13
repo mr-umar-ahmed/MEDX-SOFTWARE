@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useStore } from "../data/store";
-import { Page, Section, Field } from "../ui/bits";
+import { Page, Field } from "../ui/bits";
 
 export default function ReportTemplate() {
   const { settings, updateSettings } = useStore();

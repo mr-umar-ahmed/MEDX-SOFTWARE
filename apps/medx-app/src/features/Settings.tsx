@@ -41,7 +41,7 @@ export default function Settings() {
             {FIELDS.map((f) => (
               <div key={f.k} className="field" style={f.wide ? { gridColumn: "1 / span 2" } : undefined}>
                 <label>{f.label}</label>
-                <input className="input" value={form[f.k]} onChange={(e) => setForm({ ...form, [f.k]: e.target.value })} />
+                <input className="input" value={String(form[f.k] ?? "")} onChange={(e) => setForm({ ...form, [f.k]: e.target.value })} />
               </div>
             ))}
           </div>

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useStore } from "../data/store";
 import { fmtDateTime, ageString } from "../lib/format";
-import { Page, Section, Empty } from "../ui/bits";
+import { Page, Empty } from "../ui/bits";
 import type { SampleStatus } from "../data/types";
 
 const STATUS_COLORS: Record<SampleStatus, string> = {
