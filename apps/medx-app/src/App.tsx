@@ -45,6 +45,7 @@ import TemperatureLogs from "./features/TemperatureLogs";
 import Calibrations from "./features/Calibrations";
 import Sops from "./features/Sops";
 import AuditLog from "./features/AuditLog";
+import InterfacingPage from "./features/InterfacingPage";
 
 // Analytics
 import Analytics360 from "./features/Analytics360";
@@ -112,6 +113,7 @@ export default function App() {
           <Route path="temperature" element={<TemperatureLogs />} />
           <Route path="calibrations" element={<Calibrations />} />
           <Route path="sops" element={<Sops />} />
+          <Route path="interfacing" element={<InterfacingPage />} />
           <Route path="audit" element={<AuditLog />} />
 
           {/* Analytics */}

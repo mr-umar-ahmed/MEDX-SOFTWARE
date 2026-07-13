@@ -18,7 +18,7 @@ const FIELDS: Array<{ k: keyof LabSettings; label: string; wide?: boolean }> = [
 ];
 
 export default function Settings() {
-  const { settings, updateSettings, licenseToken, activeLicense, activateLicense } = useStore();
+  const { settings, updateSettings, activeLicense, activateLicense } = useStore();
   const [form, setForm] = useState<LabSettings>(settings);
   const [saved, setSaved] = useState(false);
   const [inputKey, setInputKey] = useState("");

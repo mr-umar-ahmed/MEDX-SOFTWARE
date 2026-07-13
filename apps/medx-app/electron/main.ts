@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 import * as path from "path";
 import * as os from "os";
+import * as net from "net";
 import { initDb, getStore, setStore, removeStore } from "./db/db";
 
 let mainWindow: BrowserWindow | null = null;
@@ -51,6 +52,45 @@ app.whenReady().then(() => {
   ipcMain.handle("get-hostname", () => {
     return os.hostname();
   });
+
+  ipcMain.handle("simulate-tcp-transmission", (_event, data: string) => {
+    return new Promise<void>((resolve, reject) => {
+      const client = net.createConnection({ port: 8100 }, () => {
+        client.write(data);
+        client.end();
+        resolve();
+      });
+      client.on("error", (err) => {
+        reject(err);
+      });
+    });
+  });
+
+  // Start TCP Server on Port 8100 to listen for Lab Analyzers (HL7 / ASTM)
+  let tcpServer: net.Server | null = null;
+  try {
+    tcpServer = net.createServer((socket) => {
+      console.log("Lab Analyzer machine connected to socket.");
+      let buffer = "";
+      socket.on("data", (chunk) => {
+        buffer += chunk.toString("utf8");
+      });
+      socket.on("end", () => {
+        console.log("Connection ended. Received raw machine data:\n", buffer);
+        if (mainWindow && buffer.trim()) {
+          mainWindow.webContents.send("analyzer-raw-data", buffer);
+        }
+      });
+      socket.on("error", (err) => {
+        console.error("Machine socket communication error:", err);
+      });
+    });
+    tcpServer.listen(8100, () => {
+      console.log("✓ Lab Analyzer TCP Server listening on port 8100");
+    });
+  } catch (err) {
+    console.error("Failed to start Lab Analyzer TCP Server:", err);
+  }
 
   createWindow();
 

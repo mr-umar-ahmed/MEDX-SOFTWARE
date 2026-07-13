@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { verifyLicenseToken, checkLicenseHeartbeat, type LicenseData } from "../core/licensing";
+import { parseAnalyzerFrame } from "../core/interfacing";
 import type {
   LabSettings, Patient, Doctor, StaffUser, Order, OrderItem, Payment, ResultValue,
   OrderSource, OrderPriority, SampleStatus, QueueToken, Estimate, EstimateItem,
@@ -21,6 +22,8 @@ declare global {
       setStore: (key: string, value: string) => Promise<void>;
       removeStore: (key: string) => Promise<void>;
       getHostname?: () => Promise<string>;
+      onAnalyzerRawData?: (callback: (data: string) => void) => void;
+      simulateTcpTransmission?: (data: string) => Promise<void>;
     };
   }
 }
@@ -99,6 +102,7 @@ interface StoreState {
   rolePermissions: Record<UserRole, string[]>;
   licenseToken?: string;
   activeLicense: LicenseData | null;
+  interfacingLogs: Array<{ id: string; at: string; barcode: string; protocol: string; status: "success" | "error" | "not_found"; results: Record<string, string>; raw: string }>;
 
   // settings & users
   updateSettings: (s: Partial<LabSettings>) => void;
@@ -108,6 +112,7 @@ interface StoreState {
   currentUserName: () => string;
   updateRolePermissions: (role: UserRole, permissions: string[]) => void;
   activateLicense: (token: string) => Promise<boolean>;
+  importAnalyzerResults: (barcode: string, results: Record<string, string>, raw: string, protocol: "HL7" | "ASTM") => void;
 
   // people
   upsertPatient: (p: Omit<Patient, "id" | "uhid" | "createdAt"> & { id?: string }) => Patient;
@@ -196,13 +201,14 @@ export const useStore = create<StoreState>()(
       audit: [],
       seq: {},
       rolePermissions: {
-        Owner: ["/", "/queue", "/patients/new", "/patients", "/new", "/estimates", "/samples", "/results", "/verification", "/reports", "/delivery", "/invoices", "/payments", "/outstanding", "/tpa", "/doctors", "/commission", "/mou", "/corporate", "/calendar", "/home-collection", "/reagents", "/suppliers", "/qc", "/temperature", "/calibrations", "/sops", "/audit", "/analytics", "/mis", "/settings", "/users", "/report-template", "/backup", "/abdm"],
+        Owner: ["/", "/queue", "/patients/new", "/patients", "/new", "/estimates", "/samples", "/results", "/verification", "/reports", "/delivery", "/invoices", "/payments", "/outstanding", "/tpa", "/doctors", "/commission", "/mou", "/corporate", "/calendar", "/home-collection", "/reagents", "/suppliers", "/qc", "/temperature", "/calibrations", "/sops", "/interfacing", "/audit", "/analytics", "/mis", "/settings", "/users", "/report-template", "/backup", "/abdm"],
         Receptionist: ["/", "/queue", "/patients/new", "/patients", "/new", "/estimates", "/reports", "/delivery", "/invoices", "/payments", "/outstanding", "/tpa", "/calendar", "/home-collection"],
-        Technician: ["/", "/samples", "/results", "/reports", "/reagents", "/suppliers", "/qc", "/temperature", "/calibrations"],
-        Pathologist: ["/", "/results", "/verification", "/reports", "/qc", "/temperature", "/calibrations", "/sops"]
+        Technician: ["/", "/samples", "/results", "/reports", "/reagents", "/suppliers", "/qc", "/temperature", "/calibrations", "/interfacing"],
+        Pathologist: ["/", "/results", "/verification", "/reports", "/qc", "/temperature", "/calibrations", "/sops", "/interfacing"]
       },
       licenseToken: undefined,
       activeLicense: null,
+      interfacingLogs: [],
 
       /* ---------- settings & users ---------- */
       updateSettings: (s) => {
@@ -230,6 +236,63 @@ export const useStore = create<StoreState>()(
           return true;
         }
         return false;
+      },
+      importAnalyzerResults: (barcode, results, raw, protocol) => {
+        const list = get().orders;
+        const index = list.findIndex((o) => o.accessionNo === barcode);
+        let status: "success" | "error" | "not_found" = "success";
+        
+        if (index === -1) {
+          status = "not_found";
+        } else {
+          const order = list[index];
+          const updatedItems = order.items.map((it) => {
+            let hasUpdate = false;
+            const updatedResults = it.results.map((rv) => {
+              const matchKey = Object.keys(results).find(
+                (k) => k.toUpperCase() === rv.analyteCode.toUpperCase()
+              );
+              if (matchKey) {
+                hasUpdate = true;
+                return { ...rv, value: results[matchKey] };
+              }
+
+              const testMatchKey = Object.keys(results).find(
+                (k) => k.toUpperCase() === it.testCode.toUpperCase()
+              );
+              if (testMatchKey && it.results.length === 1) {
+                hasUpdate = true;
+                return { ...rv, value: results[testMatchKey] };
+              }
+
+              return rv;
+            });
+
+            if (hasUpdate) {
+              return { ...it, results: updatedResults, sampleStatus: "collected" as const };
+            }
+            return it;
+          });
+
+          const updatedOrder = { ...order, items: updatedItems, status: "collected" as const };
+          set((st) => ({
+            orders: st.orders.map((o) => (o.id === order.id ? updatedOrder : o))
+          }));
+          get().log("interfacing.import", `Imported results for barcode ${barcode} from ${protocol}`);
+        }
+
+        const newLog = {
+          id: "IFL-" + Math.random().toString(36).substring(2, 8).toUpperCase(),
+          at: new Date().toISOString(),
+          barcode,
+          protocol,
+          status,
+          results,
+          raw
+        };
+        set((st) => ({
+          interfacingLogs: [newLog, ...(st.interfacingLogs || [])].slice(0, 100)
+        }));
       },
 
       /* ---------- people ---------- */
@@ -534,5 +597,24 @@ if (typeof window !== "undefined") {
       console.error("Startup license check failed:", err);
     }
   }, 150);
+
+  // Bind TCP Interfacing event receiver callback
+  setTimeout(() => {
+    if (typeof window !== "undefined" && window.medx?.onAnalyzerRawData) {
+      window.medx.onAnalyzerRawData((raw) => {
+        try {
+          const parsed = parseAnalyzerFrame(raw);
+          if (parsed) {
+            useStore.getState().importAnalyzerResults(parsed.barcode, parsed.results, raw, parsed.protocol);
+            console.log(`✓ Automatically imported machine results from ${parsed.protocol} for barcode: ${parsed.barcode}`);
+          } else {
+            console.warn("⚠️ Received analyzer data could not be parsed successfully.", raw);
+          }
+        } catch (err) {
+          console.error("Error handling incoming analyzer stream:", err);
+        }
+      });
+    }
+  }, 300);
 }
 

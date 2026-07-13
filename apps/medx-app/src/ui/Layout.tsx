@@ -70,6 +70,7 @@ const GROUPS: NavGroup[] = [
       { to: "/temperature", label: "Temperature", icon: "🌡" },
       { to: "/calibrations", label: "Calibrations", icon: "🎚" },
       { to: "/sops", label: "SOPs", icon: "📚" },
+      { to: "/interfacing", label: "Machine Interfacing", icon: "📟" },
       { to: "/audit", label: "Audit", icon: "🔍" },
     ],
   },

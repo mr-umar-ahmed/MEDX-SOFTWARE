@@ -52,8 +52,8 @@ export async function verifyLicenseToken(token: string): Promise<LicenseData | n
     const isValid = await window.crypto.subtle.verify(
       { name: "ECDSA", hash: { name: "SHA-256" } },
       key,
-      sigBytes,
-      dataBytes
+      sigBytes as any,
+      dataBytes as any
     );
 
     if (!isValid) return null;
@@ -77,7 +77,7 @@ export function isRouteAllowed(path: string, tier: "Starter" | "Pro" | "Enterpri
   }
 
   // Pro Tier Modules
-  const proRoutes = ["/doctors", "/commission", "/mou", "/corporate", "/reagents", "/suppliers", "/home-collection", "/analytics"];
+  const proRoutes = ["/doctors", "/commission", "/mou", "/corporate", "/reagents", "/suppliers", "/home-collection", "/analytics", "/interfacing"];
   const restrictedForStarter = [...enterpriseRoutes, ...proRoutes];
   return !restrictedForStarter.some((p) => path.startsWith(p));
 }
@@ -89,7 +89,7 @@ export function getRouteTierRequired(path: string): "Pro" | "Enterprise" | "Star
   const enterpriseRoutes = ["/tpa", "/qc", "/temperature", "/calibrations", "/sops", "/audit", "/abdm", "/mis"];
   if (enterpriseRoutes.some((p) => path.startsWith(p))) return "Enterprise";
 
-  const proRoutes = ["/doctors", "/commission", "/mou", "/corporate", "/reagents", "/suppliers", "/home-collection", "/analytics"];
+  const proRoutes = ["/doctors", "/commission", "/mou", "/corporate", "/reagents", "/suppliers", "/home-collection", "/analytics", "/interfacing"];
   if (proRoutes.some((p) => path.startsWith(p))) return "Pro";
 
   return "Starter";
