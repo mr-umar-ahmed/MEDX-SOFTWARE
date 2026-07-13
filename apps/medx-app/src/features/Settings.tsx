@@ -42,7 +42,11 @@ export default function Settings() {
   }
 
   function save() {
-    updateSettings(form);
+    const dataToSave = { ...form };
+    if (activeLicense) {
+      dataToSave.name = activeLicense.labName;
+    }
+    updateSettings(dataToSave);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }
@@ -58,12 +62,23 @@ export default function Settings() {
           <h2>Lab Profile</h2>
           <div className="muted" style={{ marginBottom: 16, fontSize: 13 }}>This information appears on every invoice and report. Set it up once during installation.</div>
           <div className="grid-2">
-            {FIELDS.map((f) => (
-              <div key={f.k} className="field" style={f.wide ? { gridColumn: "1 / span 2" } : undefined}>
-                <label>{f.label}</label>
-                <input className="input" value={String(form[f.k] ?? "")} onChange={(e) => setForm({ ...form, [f.k]: e.target.value })} />
-              </div>
-            ))}
+            {FIELDS.map((f) => {
+              const isLocked = f.k === "name" && !!activeLicense;
+              const value = isLocked ? activeLicense.labName : String(form[f.k] ?? "");
+              return (
+                <div key={f.k} className="field" style={f.wide ? { gridColumn: "1 / span 2" } : undefined}>
+                  <label>
+                    {f.label} {isLocked && <span style={{ color: "var(--primary)", fontSize: "11px", fontWeight: "bold" }}>(🔒 Locked by License)</span>}
+                  </label>
+                  <input
+                    className="input"
+                    value={value}
+                    disabled={isLocked}
+                    onChange={(e) => setForm({ ...form, [f.k]: e.target.value })}
+                  />
+                </div>
+              );
+            })}
           </div>
         </div>
 

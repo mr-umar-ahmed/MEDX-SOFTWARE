@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 import * as path from "path";
+import * as os from "os";
 import { initDb, getStore, setStore, removeStore } from "./db/db";
 
 let mainWindow: BrowserWindow | null = null;
@@ -45,6 +46,10 @@ app.whenReady().then(() => {
 
   ipcMain.handle("remove-store", (_event, key: string) => {
     removeStore(key);
+  });
+
+  ipcMain.handle("get-hostname", () => {
+    return os.hostname();
   });
 
   createWindow();

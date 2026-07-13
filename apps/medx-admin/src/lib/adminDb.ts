@@ -12,6 +12,7 @@ export interface LicenseRecord {
   validUntil: string;
   status: "active" | "revoked";
   lastHeartbeatAt?: string;
+  devices?: Array<{ deviceId: string; hostname: string; lastSeenAt: string }>;
 }
 
 const PRIVATE_KEY_JWK = {
@@ -116,6 +117,7 @@ export async function createLicense(
     issuedAt,
     validUntil,
     status: "active",
+    devices: [],
   };
 
   const all = await getLicenses();
@@ -131,13 +133,66 @@ export async function revokeLicense(id: string): Promise<void> {
   await saveLicenses(updated);
 }
 
-export async function registerHeartbeat(id: string): Promise<boolean> {
+export interface HeartbeatResult {
+  success: boolean;
+  active: boolean;
+  error?: string;
+}
+
+export async function registerHeartbeat(
+  id: string,
+  deviceId: string,
+  hostname: string
+): Promise<HeartbeatResult> {
   const all = await getLicenses();
   const index = all.findIndex((l) => l.id === id);
-  if (index === -1) return false;
-  if (all[index].status === "revoked") return false;
-  all[index].lastHeartbeatAt = new Date().toISOString();
+  if (index === -1) {
+    return { success: false, active: false, error: "License key is invalid." };
+  }
+  
+  const license = all[index];
+  if (license.status === "revoked") {
+    return { success: true, active: false, error: "This license key has been revoked by administrators." };
+  }
+
+  // Device limits mapping
+  const deviceLimits = {
+    Starter: 1,
+    Pro: 3,
+    Enterprise: 999, // practically unlimited
+  };
+
+  const limit = deviceLimits[license.tier] || 1;
+  const devicesList = license.devices || [];
+
+  const existingDeviceIndex = devicesList.findIndex((d) => d.deviceId === deviceId);
+
+  if (existingDeviceIndex !== -1) {
+    // Device already registered, update check-in stats
+    devicesList[existingDeviceIndex].lastSeenAt = new Date().toISOString();
+    devicesList[existingDeviceIndex].hostname = hostname;
+  } else {
+    // New device connection request, verify limits
+    if (devicesList.length >= limit) {
+      return {
+        success: true,
+        active: false,
+        error: `Device limit exceeded. Under your ${license.tier} plan, you are allowed up to ${limit} connected devices/installations. Please contact admin to upgrade.`,
+      };
+    }
+    // Register new device
+    devicesList.push({
+      deviceId,
+      hostname,
+      lastSeenAt: new Date().toISOString(),
+    });
+  }
+
+  license.devices = devicesList;
+  license.lastHeartbeatAt = new Date().toISOString();
+  all[index] = license;
+  
   await saveLicenses(all);
-  return true;
+  return { success: true, active: true };
 }
 

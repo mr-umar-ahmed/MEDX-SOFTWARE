@@ -20,6 +20,7 @@ declare global {
       getStore: (key: string) => Promise<string | null>;
       setStore: (key: string, value: string) => Promise<void>;
       removeStore: (key: string) => Promise<void>;
+      getHostname?: () => Promise<string>;
     };
   }
 }
@@ -520,9 +521,9 @@ if (typeof window !== "undefined") {
           useStore.setState({ activeLicense: verified });
           console.log(`✓ Active license verified: ${verified.tier} Tier for ${verified.labName}`);
           // Check-in heartbeat verification check
-          checkLicenseHeartbeat(verified.licenseKey, () => {
+          checkLicenseHeartbeat(verified.licenseKey, (reason) => {
             useStore.setState({ licenseToken: undefined, activeLicense: null });
-            alert("Your MedX License key has been revoked by the system administrator.");
+            alert(reason || "Your MedX License key has been revoked by the system administrator.");
           });
         } else {
           useStore.setState({ activeLicense: null });

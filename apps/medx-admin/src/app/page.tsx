@@ -12,6 +12,7 @@ interface LicenseRecord {
   validUntil: string;
   status: "active" | "revoked";
   lastHeartbeatAt?: string;
+  devices?: Array<{ deviceId: string; hostname: string; lastSeenAt: string }>;
 }
 
 export default function AdminDashboard() {
@@ -243,90 +244,100 @@ export default function AdminDashboard() {
                 No licenses generated yet. Use the key generator on the left to issue one.
               </div>
             ) : (
-              <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-slate-800 text-xs font-bold uppercase text-slate-500 bg-slate-900/50">
                       <th className="px-6 py-3">Lab Name &amp; Phone</th>
                       <th className="px-6 py-3">Tier</th>
+                      <th className="px-6 py-3">Connected Devices</th>
                       <th className="px-6 py-3">Expiry</th>
-                      <th className="px-6 py-3">Last Check-in</th>
                       <th className="px-6 py-3">Status</th>
                       <th className="px-6 py-3"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/50">
-                    {licenses.map((l) => (
-                      <tr key={l.id} className="hover:bg-slate-900/20 text-sm">
-                        <td className="px-6 py-4">
-                          <div className="font-bold text-white">{l.labName}</div>
-                          <div className="text-xs text-slate-400 mt-0.5">{l.contactPhone} · Key: <span className="font-mono">{l.id}</span></div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                              l.tier === "Enterprise"
-                                ? "bg-purple-500/10 text-purple-400 border border-purple-500/20"
-                                : l.tier === "Pro"
-                                ? "bg-teal-500/10 text-teal-400 border border-teal-500/20"
-                                : "bg-slate-500/10 text-slate-400 border border-slate-500/20"
-                            }`}
-                          >
-                            {l.tier}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-xs text-slate-300 font-mono">
-                          {new Date(l.validUntil).toLocaleDateString("en-IN", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          })}
-                        </td>
-                        <td className="px-6 py-4 text-xs font-mono">
-                          {l.lastHeartbeatAt ? (
-                            <span className="text-emerald-400">
-                              {new Date(l.lastHeartbeatAt).toLocaleDateString("en-IN", {
-                                day: "numeric",
-                                month: "short",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </span>
-                          ) : (
-                            <span className="text-slate-600">Never</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span
-                            className={`inline-block w-2.5 h-2.5 rounded-full ${
-                              l.status === "active" ? "bg-emerald-500 animate-pulse" : "bg-red-500"
-                            }`}
-                            title={l.status}
-                          />
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center gap-3 justify-end">
-                            <button
-                              onClick={() => handleCopy(l.token, l.id)}
-                              className="text-xs text-slate-400 hover:text-white"
+                    {licenses.map((l) => {
+                      const deviceLimits = { Starter: 1, Pro: 3, Enterprise: "∞" };
+                      const limit = deviceLimits[l.tier] || 1;
+                      const connectedCount = l.devices?.length || 0;
+
+                      return (
+                        <tr key={l.id} className="hover:bg-slate-900/20 text-sm">
+                          <td className="px-6 py-4">
+                            <div className="font-bold text-white">{l.labName}</div>
+                            <div className="text-xs text-slate-400 mt-0.5">{l.contactPhone} · Key: <span className="font-mono">{l.id}</span></div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span
+                              className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                                l.tier === "Enterprise"
+                                  ? "bg-purple-500/10 text-purple-400 border border-purple-500/20"
+                                  : l.tier === "Pro"
+                                  ? "bg-teal-500/10 text-teal-400 border border-teal-500/20"
+                                  : "bg-slate-500/10 text-slate-400 border border-slate-500/20"
+                              }`}
                             >
-                              {copiedId === l.id ? "Copied" : "Copy Token"}
-                            </button>
-                            {l.status === "active" && (
-                              <button
-                                onClick={() => handleRevoke(l.id)}
-                                className="text-xs text-red-400 hover:text-red-300 font-semibold"
-                              >
-                                Revoke
-                              </button>
+                                {l.tier}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="font-semibold text-slate-200 text-xs">
+                              {connectedCount} / {limit} Devices
+                            </div>
+                            {l.devices && l.devices.length > 0 ? (
+                              <div className="text-[11px] text-slate-400 mt-1 space-y-0.5">
+                                {l.devices.map((d, i) => (
+                                  <div key={i} className="flex items-center gap-1.5 font-mono">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
+                                    <span>{d.hostname}</span>
+                                    <span className="text-[10px] text-slate-500">
+                                      ({new Date(d.lastSeenAt).toLocaleDateString("en-IN", { hour: "2-digit", minute: "2-digit" })})
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-[11px] text-slate-600 font-mono mt-0.5">No devices registered</div>
                             )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td className="px-6 py-4 text-xs text-slate-300 font-mono">
+                            {new Date(l.validUntil).toLocaleDateString("en-IN", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span
+                              className={`inline-block w-2.5 h-2.5 rounded-full ${
+                                l.status === "active" ? "bg-emerald-500 animate-pulse" : "bg-red-500"
+                              }`}
+                              title={l.status}
+                            />
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex items-center gap-3 justify-end">
+                              <button
+                                onClick={() => handleCopy(l.token, l.id)}
+                                className="text-xs text-slate-400 hover:text-white"
+                              >
+                                {copiedId === l.id ? "Copied" : "Copy Token"}
+                              </button>
+                              {l.status === "active" && (
+                                <button
+                                  onClick={() => handleRevoke(l.id)}
+                                  className="text-xs text-red-400 hover:text-red-300 font-semibold"
+                                >
+                                  Revoke
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
-              </div>
             )}
           </div>
         </div>

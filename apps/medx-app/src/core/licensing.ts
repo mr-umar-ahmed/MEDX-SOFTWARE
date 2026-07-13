@@ -95,23 +95,47 @@ export function getRouteTierRequired(path: string): "Pro" | "Enterprise" | "Star
   return "Starter";
 }
 
+export function getOrCreateDeviceId(): string {
+  if (typeof window === "undefined") return "DEV-MOCK";
+  let id = localStorage.getItem("medx-device-id");
+  if (!id) {
+    id = "DEV-" + Math.random().toString(36).substring(2, 10).toUpperCase() + "-" + Math.random().toString(36).substring(2, 10).toUpperCase();
+    localStorage.setItem("medx-device-id", id);
+  }
+  return id;
+}
+
+export async function getDeviceHostname(): Promise<string> {
+  if (typeof window !== "undefined" && window.medx?.getHostname) {
+    try {
+      const hostname = await window.medx.getHostname();
+      return hostname;
+    } catch {
+      // Fallback
+    }
+  }
+  return typeof window !== "undefined" ? window.location.hostname : "unknown-pc";
+}
+
 /**
  * Pings the remote admin dashboard heartbeat endpoint to check if the license is still active.
  */
-export async function checkLicenseHeartbeat(licenseKey: string, onRevoked: () => void): Promise<void> {
+export async function checkLicenseHeartbeat(licenseKey: string, onRevoked: (reason?: string) => void): Promise<void> {
   try {
+    const deviceId = getOrCreateDeviceId();
+    const hostname = await getDeviceHostname();
     const adminUrl = "http://localhost:3000/api/heartbeat";
     const res = await fetch(adminUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ licenseKey }),
+      body: JSON.stringify({ licenseKey, deviceId, hostname }),
     });
     
     if (res.ok) {
       const data = await res.json();
       if (data.success && data.active === false) {
-        console.warn("Heartbeat warning: License has been revoked!");
-        onRevoked();
+        console.warn("Heartbeat warning: License revoked/invalid!", data.error);
+        onRevoked(data.error || "License has been revoked by the system administrator.");
       }
     }
   } catch (err) {
