@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useStore } from "../data/store";
 import { Page, Section, Field, useForm } from "../ui/bits";
+import { isRouteAllowed } from "../core/licensing";
 import type { UserRole } from "../data/types";
 
 const PAGE_GROUPS = [
@@ -68,6 +69,7 @@ const PAGE_GROUPS = [
       { to: "/temperature", label: "Temperature" },
       { to: "/calibrations", label: "Calibrations" },
       { to: "/sops", label: "SOPs" },
+      { to: "/interfacing", label: "Machine Interfacing" },
       { to: "/audit", label: "Audit Log" },
     ]
   },
@@ -119,7 +121,8 @@ export default function UsersPage() {
   }
 
   function selectAll() {
-    const allPaths = PAGE_GROUPS.flatMap((g) => g.pages.map((p) => p.to));
+    const tier = store.activeLicense?.tier || "Starter";
+    const allPaths = PAGE_GROUPS.flatMap((g) => g.pages.map((p) => p.to)).filter((path) => isRouteAllowed(path, tier));
     store.updateRolePermissions(selectedRole, allPaths);
   }
 
@@ -195,23 +198,29 @@ export default function UsersPage() {
           <div className="col">
             <Section title={`Allowed Pages for: ${selectedRole}`}>
               <div className="grid-2" style={{ gap: 20 }}>
-                {PAGE_GROUPS.map((g) => (
-                  <div key={g.title} className="card card-pad" style={{ background: "#f8fafc" }}>
-                    <h4 style={{ margin: "0 0 10px 0", color: "var(--primary-dark)", fontSize: 14 }}>{g.title}</h4>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                      {g.pages.map((p) => {
-                        const isChecked = allowedPages.includes(p.to);
-                        return (
-                          <label key={p.to} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13.5, cursor: "pointer" }}>
-                            <input type="checkbox" checked={isChecked} onChange={() => handlePermissionToggle(p.to)} disabled={p.to === "/"} />
-                            <span style={{ fontWeight: isChecked ? 600 : 400 }}>{p.label}</span>
-                            <span className="muted" style={{ fontSize: 11 }}>({p.to})</span>
-                          </label>
-                        );
-                      })}
+                {PAGE_GROUPS.map((g) => {
+                  const tier = store.activeLicense?.tier || "Starter";
+                  const visiblePages = g.pages.filter((p) => isRouteAllowed(p.to, tier));
+                  if (visiblePages.length === 0) return null;
+
+                  return (
+                    <div key={g.title} className="card card-pad" style={{ background: "#f8fafc" }}>
+                      <h4 style={{ margin: "0 0 10px 0", color: "var(--primary-dark)", fontSize: 14 }}>{g.title}</h4>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {visiblePages.map((p) => {
+                          const isChecked = allowedPages.includes(p.to);
+                          return (
+                            <label key={p.to} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13.5, cursor: "pointer" }}>
+                              <input type="checkbox" checked={isChecked} onChange={() => handlePermissionToggle(p.to)} disabled={p.to === "/"} />
+                              <span style={{ fontWeight: isChecked ? 600 : 400 }}>{p.label}</span>
+                              <span className="muted" style={{ fontSize: 11 }}>({p.to})</span>
+                            </label>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </Section>
           </div>
