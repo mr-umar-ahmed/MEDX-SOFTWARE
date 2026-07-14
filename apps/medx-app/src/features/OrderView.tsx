@@ -6,6 +6,7 @@ import { formatINR } from "../core/money";
 import { fmtDate, fmtDateTime, ageString, sexLabel } from "../lib/format";
 import { getTest } from "../catalog";
 import { StatusBadge } from "./Dashboard";
+import { generateReportPdf } from "../core/pdfReport";
 import type { Order } from "../data/types";
 
 type Tab = "results" | "report" | "invoice" | "barcode" | "receipt";
@@ -127,8 +128,9 @@ function ReportTab({ order }: { order: Order }) {
     <div>
       <div className="no-print row" style={{ marginBottom: 14, justifyContent: "flex-end" }}>
         {!verified && <span className="badge badge-warn" style={{ alignSelf: "center", marginRight: "auto" }}>⚠ Not verified — provisional</span>}
+        <button className="btn" onClick={() => generateReportPdf(order, patient, doctor, s)}>📥 Download PDF</button>
         <button className="btn" onClick={whatsapp}>WhatsApp Patient</button>
-        <button className="btn btn-primary" onClick={() => window.print()}>🖨 Print / Save PDF</button>
+        <button className="btn btn-primary" onClick={() => window.print()}>🖨 Print</button>
       </div>
       <div className="report-sheet">
         <div className="report-head">

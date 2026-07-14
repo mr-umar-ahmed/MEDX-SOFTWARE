@@ -3,9 +3,10 @@ import { Link } from "react-router-dom";
 import { useStore } from "../data/store";
 import { fmtDateTime, ageString } from "../lib/format";
 import { Page, Empty } from "../ui/bits";
+import { generateReportPdf } from "../core/pdfReport";
 
 export default function DeliveryStatus() {
-  const { orders, getPatient, markDelivered, settings } = useStore();
+  const { orders, getPatient, getDoctor, markDelivered, settings } = useStore();
   const [filter, setFilter] = useState<"all" | "pending" | "delivered">("all");
 
   const reported = orders.filter((o) => o.status === "reported" || o.status === "delivered");
@@ -25,6 +26,15 @@ export default function DeliveryStatus() {
     const num = phone.length === 10 ? "91" + phone : phone;
     window.open(`https://wa.me/${num}?text=${encodeURIComponent(text)}`, "_blank");
     markDelivered(orderId, "WhatsApp");
+  }
+
+  function downloadPdf(orderId: string) {
+    const o = orders.find((x) => x.id === orderId);
+    if (!o) return;
+    const p = getPatient(o.patientId);
+    const d = getDoctor(o.doctorId);
+    if (!p) return;
+    generateReportPdf(o, p, d, settings);
   }
 
   return (
@@ -60,6 +70,7 @@ export default function DeliveryStatus() {
                     <td>
                       {o.status === "reported" && (
                         <div className="row">
+                          <button className="btn" title="Download PDF" onClick={() => downloadPdf(o.id)} style={{ padding: "4px 10px" }}>📄</button>
                           <button className="btn" onClick={() => whatsapp(o.id)}>📱 WhatsApp</button>
                           <button className="btn" onClick={() => { markDelivered(o.id, "Print"); }}>🖨 Print</button>
                           <button className="btn" onClick={() => { markDelivered(o.id, "Email"); }}>📧 Email</button>
@@ -76,3 +87,4 @@ export default function DeliveryStatus() {
     </Page>
   );
 }
+

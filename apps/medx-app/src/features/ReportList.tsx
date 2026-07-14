@@ -4,9 +4,11 @@ import { useStore } from "../data/store";
 import { fmtDateTime, ageString } from "../lib/format";
 import { Page, Empty } from "../ui/bits";
 import { StatusBadge } from "./Dashboard";
+import { generateReportPdf } from "../core/pdfReport";
 
 export default function ReportList() {
-  const { orders, getPatient } = useStore();
+  const store = useStore();
+  const { orders, getPatient, getDoctor, settings } = store;
   const [q, setQ] = useState("");
 
   const reported = orders.filter((o) => o.status === "reported" || o.status === "delivered");
@@ -29,6 +31,7 @@ export default function ReportList() {
             <tbody>
               {filtered.map((o) => {
                 const p = getPatient(o.patientId);
+                const d = getDoctor(o.doctorId);
                 return (
                   <tr key={o.id}>
                     <td><b>{o.invoiceNo}</b><div className="muted" style={{ fontSize: 12 }}>{o.accessionNo}</div></td>
@@ -37,7 +40,12 @@ export default function ReportList() {
                     <td>{o.verifiedBy ?? "—"}</td>
                     <td className="muted" style={{ fontSize: 13 }}>{o.verifiedAt ? fmtDateTime(o.verifiedAt) : fmtDateTime(o.createdAt)}</td>
                     <td><StatusBadge status={o.status} /></td>
-                    <td><Link to={`/order/${o.id}`} className="btn">View Report →</Link></td>
+                    <td>
+                      <div className="row">
+                        <button className="btn" title="Download PDF" onClick={() => p && generateReportPdf(o, p, d, settings)} style={{ padding: "4px 10px" }}>📄</button>
+                        <Link to={`/order/${o.id}`} className="btn">View Report →</Link>
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
@@ -48,3 +56,4 @@ export default function ReportList() {
     </Page>
   );
 }
+

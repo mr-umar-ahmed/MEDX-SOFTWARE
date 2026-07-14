@@ -16,10 +16,41 @@
     "test:watch": "vitest",
     "lint": "oxlint",
     "preview": "vite preview",
-    "dist": "npm run build && electron-builder"
+    "dist": "npm run build && electron-builder",
+    "package": "npm run build && electron-builder --win"
+  },
+  "build": {
+    "appId": "com.medx.lims",
+    "productName": "MedX — Pathology LIMS",
+    "copyright": "Copyright © 2026 MedX Software",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "MedX LIMS",
+      "artifactName": "MedX-Setup-${version}.${ext}"
+    }
   },
   "dependencies": {
     "jsbarcode": "^3.12.1",
+    "jspdf": "^4.2.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-router-dom": "^7.9.1",
@@ -39,3 +70,4 @@
     "vitest": "^3.2.4"
   }
 }
+
