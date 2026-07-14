@@ -111,6 +111,8 @@ async function signData(dataStr: string): Promise<string> {
   return bytesToBase64Url(new Uint8Array(signatureBuffer));
 }
 
+const BUCKET_URL = "https://kvdb.io/cae41247-25e4-414b-b0fa-bf1b49651a2c";
+
 function getDbDir(): string {
   const isVercel = process.env.VERCEL === "1" || process.env.VERCEL_ENV;
   const dbDir = isVercel
@@ -122,23 +124,65 @@ function getDbDir(): string {
   return dbDir;
 }
 
-function getDbPath(): string {
-  return path.join(getDbDir(), "admin-keys.json");
+async function readKey<T>(keyName: string, fallback: T): Promise<T> {
+  const localPath = path.join(getDbDir(), `${keyName}.json`);
+
+  // 1. Try fetching from remote persistent KV store
+  try {
+    const res = await fetch(`${BUCKET_URL}/${keyName}`, {
+      method: "GET",
+      headers: { "Cache-Control": "no-cache" },
+    });
+    if (res.ok) {
+      const text = await res.text();
+      // Cache locally
+      try {
+        fs.writeFileSync(localPath, text, "utf-8");
+      } catch (e) {}
+      return JSON.parse(text) as T;
+    }
+  } catch (err) {
+    console.error(`KVDB Read Failed for ${keyName}, falling back to local files:`, err);
+  }
+
+  // 2. Fallback to local files
+  if (fs.existsSync(localPath)) {
+    try {
+      return JSON.parse(fs.readFileSync(localPath, "utf-8")) as T;
+    } catch {
+      return fallback;
+    }
+  }
+  return fallback;
 }
 
-export async function getLicenses(): Promise<LicenseRecord[]> {
-  const dbPath = getDbPath();
-  if (!fs.existsSync(dbPath)) return [];
+async function writeKey<T>(keyName: string, value: T): Promise<void> {
+  const text = JSON.stringify(value, null, 2);
+  const localPath = path.join(getDbDir(), `${keyName}.json`);
+
+  // 1. Write locally
   try {
-    return JSON.parse(fs.readFileSync(dbPath, "utf-8"));
-  } catch {
-    return [];
+    fs.writeFileSync(localPath, text, "utf-8");
+  } catch (e) {}
+
+  // 2. Write to remote persistent KV store
+  try {
+    await fetch(`${BUCKET_URL}/${keyName}`, {
+      method: "PUT",
+      body: text,
+      headers: { "Content-Type": "application/json" }
+    });
+  } catch (err) {
+    console.error(`KVDB Write Failed for ${keyName}:`, err);
   }
 }
 
+export async function getLicenses(): Promise<LicenseRecord[]> {
+  return readKey<LicenseRecord[]>("admin-keys", []);
+}
+
 export async function saveLicenses(list: LicenseRecord[]): Promise<void> {
-  const dbPath = getDbPath();
-  fs.writeFileSync(dbPath, JSON.stringify(list, null, 2), "utf-8");
+  return writeKey<LicenseRecord[]>("admin-keys", list);
 }
 
 export async function createLicense(
@@ -259,20 +303,11 @@ export async function registerHeartbeat(
 
 // --- CRM Helpers ---
 export async function getCustomers(): Promise<CustomerRecord[]> {
-  const dbDir = getDbDir();
-  const filePath = path.join(dbDir, "admin-customers.json");
-  if (!fs.existsSync(filePath)) return [];
-  try {
-    return JSON.parse(fs.readFileSync(filePath, "utf-8"));
-  } catch {
-    return [];
-  }
+  return readKey<CustomerRecord[]>("admin-customers", []);
 }
 
 export async function saveCustomers(list: CustomerRecord[]): Promise<void> {
-  const dbDir = getDbDir();
-  const filePath = path.join(dbDir, "admin-customers.json");
-  fs.writeFileSync(filePath, JSON.stringify(list, null, 2), "utf-8");
+  return writeKey<CustomerRecord[]>("admin-customers", list);
 }
 
 export async function createCustomer(
@@ -299,20 +334,11 @@ export async function createCustomer(
 
 // --- Billing Helpers ---
 export async function getPayments(): Promise<PaymentRecord[]> {
-  const dbDir = getDbDir();
-  const filePath = path.join(dbDir, "admin-payments.json");
-  if (!fs.existsSync(filePath)) return [];
-  try {
-    return JSON.parse(fs.readFileSync(filePath, "utf-8"));
-  } catch {
-    return [];
-  }
+  return readKey<PaymentRecord[]>("admin-payments", []);
 }
 
 export async function savePayments(list: PaymentRecord[]): Promise<void> {
-  const dbDir = getDbDir();
-  const filePath = path.join(dbDir, "admin-payments.json");
-  fs.writeFileSync(filePath, JSON.stringify(list, null, 2), "utf-8");
+  return writeKey<PaymentRecord[]>("admin-payments", list);
 }
 
 export async function createPayment(
@@ -341,20 +367,11 @@ export async function createPayment(
 
 // --- Tickets Helpers ---
 export async function getTickets(): Promise<TicketRecord[]> {
-  const dbDir = getDbDir();
-  const filePath = path.join(dbDir, "admin-tickets.json");
-  if (!fs.existsSync(filePath)) return [];
-  try {
-    return JSON.parse(fs.readFileSync(filePath, "utf-8"));
-  } catch {
-    return [];
-  }
+  return readKey<TicketRecord[]>("admin-tickets", []);
 }
 
 export async function saveTickets(list: TicketRecord[]): Promise<void> {
-  const dbDir = getDbDir();
-  const filePath = path.join(dbDir, "admin-tickets.json");
-  fs.writeFileSync(filePath, JSON.stringify(list, null, 2), "utf-8");
+  return writeKey<TicketRecord[]>("admin-tickets", list);
 }
 
 export async function createTicket(
@@ -384,28 +401,16 @@ export async function createTicket(
 
 // --- Config Helpers ---
 export async function getGlobalConfig(): Promise<AppConfig> {
-  const dbDir = getDbDir();
-  const filePath = path.join(dbDir, "admin-config.json");
-  if (!fs.existsSync(filePath)) {
-    const defaultConfig: AppConfig = {
-      allowAbdm: true,
-      allowWhatsApp: true,
-      allowSms: true,
-      maintenanceMode: false,
-    };
-    fs.writeFileSync(filePath, JSON.stringify(defaultConfig, null, 2), "utf-8");
-    return defaultConfig;
-  }
-  try {
-    return JSON.parse(fs.readFileSync(filePath, "utf-8"));
-  } catch {
-    return { allowAbdm: true, allowWhatsApp: true, allowSms: true, maintenanceMode: false };
-  }
+  return readKey<AppConfig>("admin-config", {
+    allowAbdm: true,
+    allowWhatsApp: true,
+    allowSms: true,
+    maintenanceMode: false,
+  });
 }
 
 export async function saveGlobalConfig(config: AppConfig): Promise<void> {
-  const dbDir = getDbDir();
-  const filePath = path.join(dbDir, "admin-config.json");
-  fs.writeFileSync(filePath, JSON.stringify(config, null, 2), "utf-8");
+  return writeKey<AppConfig>("admin-config", config);
 }
+
 

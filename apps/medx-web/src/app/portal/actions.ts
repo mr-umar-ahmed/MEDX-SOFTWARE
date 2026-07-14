@@ -3,15 +3,46 @@
 import fs from "fs";
 import path from "path";
 
-const DB_PATH = path.join(process.cwd(), "cloud-db.json");
+const BUCKET_URL = "https://kvdb.io/cae41247-25e4-414b-b0fa-bf1b49651a2c";
+
+function getLocalDbPath() {
+  const isVercel = process.env.VERCEL === "1" || process.env.VERCEL_ENV;
+  const dir = isVercel ? "/tmp" : process.cwd();
+  return path.join(dir, "cloud-db.json");
+}
+
+async function getCloudDb() {
+  const localPath = getLocalDbPath();
+  let db: { labs: Record<string, any> } = { labs: {} };
+
+  try {
+    const res = await fetch(`${BUCKET_URL}/cloud_db`, {
+      method: "GET",
+      headers: { "Cache-Control": "no-cache" }
+    });
+    if (res.ok) {
+      const text = await res.text();
+      db = JSON.parse(text);
+      try {
+        fs.writeFileSync(localPath, text, "utf-8");
+      } catch (e) {}
+      return db;
+    }
+  } catch (e) {
+    console.error("KVDB Fetch failed for portal cloud_db, attempting local fallback:", e);
+  }
+
+  if (fs.existsSync(localPath)) {
+    try {
+      db = JSON.parse(fs.readFileSync(localPath, "utf-8"));
+    } catch (err) {}
+  }
+  return db;
+}
 
 export async function verifyAndFetchReport(invoiceNo: string, phone: string) {
   try {
-    if (!fs.existsSync(DB_PATH)) {
-      return { error: "No records synced to cloud yet. Please try again later." };
-    }
-    
-    const db = JSON.parse(fs.readFileSync(DB_PATH, "utf-8"));
+    const db = await getCloudDb();
     if (!db.labs) db.labs = {};
     
     let foundOrder: any = null;
@@ -71,7 +102,7 @@ export async function getSyncedLabs() {
     let adminLabs: any[] = [];
     try {
       const res = await fetch("https://medx-admin-lac.vercel.app/api/licenses", {
-        next: { revalidate: 15 } // revalidate every 15 seconds
+        next: { revalidate: 5 } // revalidate every 5 seconds
       });
       const data = await res.json();
       if (data.success && data.licenses) {
@@ -82,11 +113,8 @@ export async function getSyncedLabs() {
     }
 
     // Read synced labs
-    let syncedLabs: Record<string, any> = {};
-    if (fs.existsSync(DB_PATH)) {
-      const db = JSON.parse(fs.readFileSync(DB_PATH, "utf-8"));
-      syncedLabs = db.labs || {};
-    }
+    const db = await getCloudDb();
+    const syncedLabs = db.labs || {};
 
     // Merge: Active admin licenses get priority or fallback
     const mergedList: any[] = [];
