@@ -16,4 +16,10 @@ contextBridge.exposeInMainWorld("medx", {
     ipcRenderer.on("updater-progress", (_event, percent) => callback(percent));
   },
   installUpdate: () => ipcRenderer.invoke("install-update"),
+  listSerialPorts: () => ipcRenderer.invoke("list-serial-ports"),
+  connectSerialPort: (path: string, baudRate: number) => ipcRenderer.invoke("connect-serial-port", path, baudRate),
+  disconnectSerialPort: () => ipcRenderer.invoke("disconnect-serial-port"),
+  onSerialError: (callback: (err: string) => void) => {
+    ipcRenderer.on("serial-error", (_event, err) => callback(err));
+  }
 });

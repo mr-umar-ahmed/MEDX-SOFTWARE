@@ -27,6 +27,10 @@ declare global {
       onUpdaterStatus?: (cb: (status: { status: string }) => void) => void;
       onUpdaterProgress?: (cb: (percent: number) => void) => void;
       installUpdate?: () => Promise<void>;
+      listSerialPorts?: () => Promise<Array<{ path: string; manufacturer?: string }>>;
+      connectSerialPort?: (path: string, baudRate: number) => Promise<{ success: boolean; error?: string }>;
+      disconnectSerialPort?: () => Promise<{ success: boolean; error?: string }>;
+      onSerialError?: (cb: (err: string) => void) => void;
     };
   }
 }
@@ -105,6 +109,7 @@ interface StoreState {
   rolePermissions: Record<UserRole, string[]>;
   licenseToken?: string;
   activeLicense: LicenseData | null;
+  lastCloudSync?: number;
   interfacingLogs: Array<{ id: string; at: string; barcode: string; protocol: string; status: "success" | "error" | "not_found"; results: Record<string, string>; raw: string }>;
 
   // settings & users

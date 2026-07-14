@@ -111,12 +111,19 @@ async function signData(dataStr: string): Promise<string> {
   return bytesToBase64Url(new Uint8Array(signatureBuffer));
 }
 
-function getDbPath(): string {
-  const dbDir = path.join(process.cwd(), "..", "..", "Database");
+function getDbDir(): string {
+  const isVercel = process.env.VERCEL === "1" || process.env.VERCEL_ENV;
+  const dbDir = isVercel
+    ? "/tmp/medx-db"
+    : path.join(process.cwd(), "..", "..", "Database");
   if (!fs.existsSync(dbDir)) {
     fs.mkdirSync(dbDir, { recursive: true });
   }
-  return path.join(dbDir, "admin-keys.json");
+  return dbDir;
+}
+
+function getDbPath(): string {
+  return path.join(getDbDir(), "admin-keys.json");
 }
 
 export async function getLicenses(): Promise<LicenseRecord[]> {
@@ -252,7 +259,7 @@ export async function registerHeartbeat(
 
 // --- CRM Helpers ---
 export async function getCustomers(): Promise<CustomerRecord[]> {
-  const dbDir = path.join(process.cwd(), "..", "..", "Database");
+  const dbDir = getDbDir();
   const filePath = path.join(dbDir, "admin-customers.json");
   if (!fs.existsSync(filePath)) return [];
   try {
@@ -263,7 +270,7 @@ export async function getCustomers(): Promise<CustomerRecord[]> {
 }
 
 export async function saveCustomers(list: CustomerRecord[]): Promise<void> {
-  const dbDir = path.join(process.cwd(), "..", "..", "Database");
+  const dbDir = getDbDir();
   const filePath = path.join(dbDir, "admin-customers.json");
   fs.writeFileSync(filePath, JSON.stringify(list, null, 2), "utf-8");
 }
@@ -292,7 +299,7 @@ export async function createCustomer(
 
 // --- Billing Helpers ---
 export async function getPayments(): Promise<PaymentRecord[]> {
-  const dbDir = path.join(process.cwd(), "..", "..", "Database");
+  const dbDir = getDbDir();
   const filePath = path.join(dbDir, "admin-payments.json");
   if (!fs.existsSync(filePath)) return [];
   try {
@@ -303,7 +310,7 @@ export async function getPayments(): Promise<PaymentRecord[]> {
 }
 
 export async function savePayments(list: PaymentRecord[]): Promise<void> {
-  const dbDir = path.join(process.cwd(), "..", "..", "Database");
+  const dbDir = getDbDir();
   const filePath = path.join(dbDir, "admin-payments.json");
   fs.writeFileSync(filePath, JSON.stringify(list, null, 2), "utf-8");
 }
@@ -334,7 +341,7 @@ export async function createPayment(
 
 // --- Tickets Helpers ---
 export async function getTickets(): Promise<TicketRecord[]> {
-  const dbDir = path.join(process.cwd(), "..", "..", "Database");
+  const dbDir = getDbDir();
   const filePath = path.join(dbDir, "admin-tickets.json");
   if (!fs.existsSync(filePath)) return [];
   try {
@@ -345,7 +352,7 @@ export async function getTickets(): Promise<TicketRecord[]> {
 }
 
 export async function saveTickets(list: TicketRecord[]): Promise<void> {
-  const dbDir = path.join(process.cwd(), "..", "..", "Database");
+  const dbDir = getDbDir();
   const filePath = path.join(dbDir, "admin-tickets.json");
   fs.writeFileSync(filePath, JSON.stringify(list, null, 2), "utf-8");
 }
@@ -377,7 +384,7 @@ export async function createTicket(
 
 // --- Config Helpers ---
 export async function getGlobalConfig(): Promise<AppConfig> {
-  const dbDir = path.join(process.cwd(), "..", "..", "Database");
+  const dbDir = getDbDir();
   const filePath = path.join(dbDir, "admin-config.json");
   if (!fs.existsSync(filePath)) {
     const defaultConfig: AppConfig = {
@@ -397,7 +404,7 @@ export async function getGlobalConfig(): Promise<AppConfig> {
 }
 
 export async function saveGlobalConfig(config: AppConfig): Promise<void> {
-  const dbDir = path.join(process.cwd(), "..", "..", "Database");
+  const dbDir = getDbDir();
   const filePath = path.join(dbDir, "admin-config.json");
   fs.writeFileSync(filePath, JSON.stringify(config, null, 2), "utf-8");
 }

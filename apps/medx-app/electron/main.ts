@@ -127,6 +127,71 @@ app.whenReady().then(() => {
     console.error("Failed to start Lab Analyzer TCP Server:", err);
   }
 
+  // --- Serial Port Logic ---
+  let activeSerialPort: any = null;
+
+  ipcMain.handle("list-serial-ports", async () => {
+    try {
+      // Lazy import to avoid issues if not built properly
+      const { SerialPort } = require("serialport");
+      const ports = await SerialPort.list();
+      return ports.map((p: any) => ({ path: p.path, manufacturer: p.manufacturer }));
+    } catch (err: any) {
+      console.error("Failed to list serial ports", err);
+      return [];
+    }
+  });
+
+  ipcMain.handle("connect-serial-port", async (_event, pathStr: string, baudRate: number) => {
+    return new Promise((resolve) => {
+      try {
+        const { SerialPort } = require("serialport");
+        if (activeSerialPort && activeSerialPort.isOpen) {
+          activeSerialPort.close();
+        }
+
+        activeSerialPort = new SerialPort({ path: pathStr, baudRate: baudRate }, (err: any) => {
+          if (err) {
+            resolve({ success: false, error: err.message });
+            return;
+          }
+          resolve({ success: true });
+        });
+
+        activeSerialPort.on("data", (data: Buffer) => {
+          const str = data.toString("utf8");
+          console.log(`[Serial ${pathStr}] Data received:`, str);
+          if (mainWindow) {
+            mainWindow.webContents.send("analyzer-raw-data", str);
+          }
+        });
+
+        activeSerialPort.on("error", (err: any) => {
+          console.error(`[Serial ${pathStr}] Error:`, err.message);
+          if (mainWindow) {
+            mainWindow.webContents.send("serial-error", err.message);
+          }
+        });
+      } catch (err: any) {
+        resolve({ success: false, error: err.message });
+      }
+    });
+  });
+
+  ipcMain.handle("disconnect-serial-port", async () => {
+    return new Promise((resolve) => {
+      if (activeSerialPort && activeSerialPort.isOpen) {
+        activeSerialPort.close((err: any) => {
+          if (err) resolve({ success: false, error: err.message });
+          else resolve({ success: true });
+        });
+      } else {
+        resolve({ success: true });
+      }
+    });
+  });
+  // --- End Serial Port Logic ---
+
   createWindow();
 
   app.on("activate", () => {

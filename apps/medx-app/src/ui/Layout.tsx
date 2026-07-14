@@ -100,11 +100,13 @@ export default function Layout() {
   const users = useStore((s) => s.users);
   const rolePermissions = useStore((s) => s.rolePermissions);
   const activeLicense = useStore((s) => s.activeLicense);
+  const lastCloudSync = useStore((s) => s.lastCloudSync);
 
   const currentUser = users.find((u) => u.id === currentUserId);
   const role = currentUser?.role || "Receptionist";
   const allowed = rolePermissions?.[role] || [];
   const tier = activeLicense?.tier || "Starter";
+  const isCloudSynced = lastCloudSync && (Date.now() - lastCloudSync) < 15 * 60 * 1000;
 
   const location = useLocation();
   const routeAllowed = isRouteAllowed(location.pathname, tier);
@@ -164,6 +166,10 @@ export default function Layout() {
           <div>
             <div style={{ color: "#cbd5e1", fontWeight: 700 }}>{settings.name}</div>
             <div style={{ color: "#64748b" }}>v0.1.0 · ● {activeLicense ? `${activeLicense.tier} Tier` : "Working offline"}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, marginTop: 4, color: "#64748b" }}>
+              <div style={{ width: 8, height: 8, borderRadius: "50%", background: isCloudSynced ? "#10b981" : "#ef4444" }} />
+              {isCloudSynced ? "Cloud Data Synced" : "Pending Cloud Sync"}
+            </div>
           </div>
         </div>
       </aside>

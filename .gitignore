@@ -23,3 +23,12 @@ Thumbs.db
 
 # Local SQLite & JSON database stores
 Database/
+
+# Build artifacts
+dist/
+dist-electron/
+release/
+out/
+.next/
+cloud-db.json
+
