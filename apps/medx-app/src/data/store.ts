@@ -24,6 +24,9 @@ declare global {
       getHostname?: () => Promise<string>;
       onAnalyzerRawData?: (callback: (data: string) => void) => void;
       simulateTcpTransmission?: (data: string) => Promise<void>;
+      onUpdaterStatus?: (cb: (status: { status: string }) => void) => void;
+      onUpdaterProgress?: (cb: (percent: number) => void) => void;
+      installUpdate?: () => Promise<void>;
     };
   }
 }

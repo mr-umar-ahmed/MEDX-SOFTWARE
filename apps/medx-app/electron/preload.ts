@@ -9,4 +9,11 @@ contextBridge.exposeInMainWorld("medx", {
     ipcRenderer.on("analyzer-raw-data", (_event, data) => callback(data));
   },
   simulateTcpTransmission: (data: string) => ipcRenderer.invoke("simulate-tcp-transmission", data),
+  onUpdaterStatus: (callback: (status: { status: string }) => void) => {
+    ipcRenderer.on("updater-status", (_event, status) => callback(status));
+  },
+  onUpdaterProgress: (callback: (percent: number) => void) => {
+    ipcRenderer.on("updater-progress", (_event, percent) => callback(percent));
+  },
+  installUpdate: () => ipcRenderer.invoke("install-update"),
 });

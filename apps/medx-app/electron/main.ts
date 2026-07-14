@@ -1,8 +1,11 @@
 import { app, BrowserWindow, ipcMain, Menu } from "electron";
+import { autoUpdater } from "electron-updater";
 import * as path from "path";
 import * as os from "os";
 import * as net from "net";
 import { initDb, getStore, setStore, removeStore } from "./db/db";
+
+const isDev = process.env.NODE_ENV === "development" || !app.isPackaged;
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -31,8 +34,6 @@ function createWindow() {
     contextMenu.popup({ window: mainWindow as BrowserWindow });
   });
 
-  const isDev = process.env.NODE_ENV === "development" || !app.isPackaged;
-
   if (isDev) {
     mainWindow.loadURL("http://localhost:5173");
     // Removed auto openDevTools() popup
@@ -49,6 +50,11 @@ app.whenReady().then(() => {
   // Initialize local SQLite database
   initDb(app.getPath("userData"));
 
+  // Check for updates
+  if (!isDev) {
+    autoUpdater.checkForUpdatesAndNotify();
+  }
+
   // Bind IPC database calls
   ipcMain.handle("get-store", (_event, key: string) => {
     return getStore(key);
@@ -60,6 +66,22 @@ app.whenReady().then(() => {
 
   ipcMain.handle("remove-store", (_event, key: string) => {
     removeStore(key);
+  });
+
+  // Auto updater events
+  autoUpdater.on("update-available", () => {
+    if (mainWindow) mainWindow.webContents.send("updater-status", { status: "available" });
+  });
+  autoUpdater.on("download-progress", (progressObj) => {
+    if (mainWindow) mainWindow.webContents.send("updater-progress", progressObj.percent);
+  });
+  autoUpdater.on("update-downloaded", () => {
+    if (mainWindow) mainWindow.webContents.send("updater-status", { status: "downloaded" });
+  });
+
+  // Renderer can trigger install
+  ipcMain.handle("install-update", () => {
+    autoUpdater.quitAndInstall();
   });
 
   ipcMain.handle("get-hostname", () => {

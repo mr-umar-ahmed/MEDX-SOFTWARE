@@ -23,6 +23,13 @@
     "appId": "com.medx.lims",
     "productName": "MedX — Pathology LIMS",
     "copyright": "Copyright © 2026 MedX Software",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "mr-umar-ahmed",
+        "repo": "MEDX-SOFTWARE"
+      }
+    ],
     "directories": {
       "output": "release"
     },
@@ -34,7 +41,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ]
     },
@@ -49,6 +58,7 @@
     }
   },
   "dependencies": {
+    "electron-updater": "^6.8.9",
     "jsbarcode": "^3.12.1",
     "jspdf": "^4.2.1",
     "react": "^19.2.7",
@@ -70,4 +80,3 @@
     "vitest": "^3.2.4"
   }
 }
-

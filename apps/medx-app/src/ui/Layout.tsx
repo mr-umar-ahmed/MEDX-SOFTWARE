@@ -1,3 +1,4 @@
+import React from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useStore } from "../data/store";
 import { isRouteAllowed, getRouteTierRequired } from "../core/licensing";
@@ -109,6 +110,19 @@ export default function Layout() {
   const routeAllowed = isRouteAllowed(location.pathname, tier);
   const requiredTier = getRouteTierRequired(location.pathname);
 
+  // Auto Updater State
+  const [updateStatus, setUpdateStatus] = React.useState<string | null>(null);
+  const [updateProgress, setUpdateProgress] = React.useState<number>(0);
+
+  React.useEffect(() => {
+    if (window.medx?.onUpdaterStatus) {
+      window.medx.onUpdaterStatus((s: { status: string }) => setUpdateStatus(s.status));
+    }
+    if (window.medx?.onUpdaterProgress) {
+      window.medx.onUpdaterProgress((p: number) => setUpdateProgress(p));
+    }
+  }, []);
+
   return (
     <div className="app">
       <aside className="sidebar no-print" style={{ overflowY: "auto" }}>
@@ -136,9 +150,21 @@ export default function Layout() {
             </div>
           );
         })}
-        <div className="sidebar-foot">
-          <div style={{ color: "#cbd5e1", fontWeight: 700 }}>{settings.name}</div>
-          <div style={{ color: "#64748b" }}>v0.2.0 · ● {activeLicense ? `${activeLicense.tier} Tier` : "Working offline"}</div>
+        <div className="sidebar-foot" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          {updateStatus === "available" && (
+            <div style={{ fontSize: 12, padding: "8px", background: "var(--primary)", color: "white", borderRadius: 4, textAlign: "center" }}>
+              Downloading update... {Math.round(updateProgress)}%
+            </div>
+          )}
+          {updateStatus === "downloaded" && (
+            <button className="btn btn-primary" style={{ fontSize: 12 }} onClick={() => window.medx?.installUpdate?.()}>
+              Restart &amp; Install Update
+            </button>
+          )}
+          <div>
+            <div style={{ color: "#cbd5e1", fontWeight: 700 }}>{settings.name}</div>
+            <div style={{ color: "#64748b" }}>v0.1.0 · ● {activeLicense ? `${activeLicense.tier} Tier` : "Working offline"}</div>
+          </div>
         </div>
       </aside>
       <div className="main">
