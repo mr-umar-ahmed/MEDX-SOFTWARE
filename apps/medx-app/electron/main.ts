@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, Menu } from "electron";
 import * as path from "path";
 import * as os from "os";
 import * as net from "net";
@@ -18,11 +18,24 @@ function createWindow() {
     },
   });
 
+  mainWindow.removeMenu(); // Removes default File/Edit/View menu bar
+
+  // Right-click context menu
+  mainWindow.webContents.on("context-menu", () => {
+    const contextMenu = Menu.buildFromTemplate([
+      { role: "copy" },
+      { role: "paste" },
+      { type: "separator" },
+      { role: "toggleDevTools", label: "Developer Tools" },
+    ]);
+    contextMenu.popup({ window: mainWindow as BrowserWindow });
+  });
+
   const isDev = process.env.NODE_ENV === "development" || !app.isPackaged;
 
   if (isDev) {
     mainWindow.loadURL("http://localhost:5173");
-    mainWindow.webContents.openDevTools();
+    // Removed auto openDevTools() popup
   } else {
     mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
   }
