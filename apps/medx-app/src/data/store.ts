@@ -241,6 +241,15 @@ export const useStore = create<StoreState>()(
         if (verified) {
           set({ licenseToken: token, activeLicense: verified });
           get().log("license.activate", `Activated ${verified.tier} license for ${verified.labName}`);
+          
+          // Instantly connect to the admin panel and register this device
+          try {
+            await checkLicenseHeartbeat(verified.licenseKey, (reason) => {
+              set({ licenseToken: undefined, activeLicense: null });
+              alert(reason || "Your license has been deactivated.");
+            });
+          } catch (e) {}
+
           return true;
         }
         return false;

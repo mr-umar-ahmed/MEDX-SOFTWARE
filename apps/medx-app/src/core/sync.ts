@@ -7,11 +7,9 @@ let lastSyncTime = 0;
 export async function forceCloudSync() {
   const state = useStore.getState();
   
-  // We only sync reported orders and patients associated with them
-  // This minimizes payload and protects PII/financials of pending orders.
-  const reportedOrders = state.orders.filter(o => o.status === "reported" || o.status === "delivered");
-  const patientIds = new Set(reportedOrders.map(o => o.patientId));
-  const patients = state.patients.filter(p => patientIds.has(p.id));
+  // We sync ALL orders and patients so the patient portal can show pending statuses
+  const orders = state.orders;
+  const patients = state.patients;
   
   const payload = {
     type: "FULL_SYNC",
@@ -30,7 +28,7 @@ export async function forceCloudSync() {
       price: t.defaultPricePaise / 100, // convert to rupees
     })),
     data: {
-      orders: reportedOrders,
+      orders: orders,
       patients: patients
     }
   };
@@ -54,6 +52,8 @@ export async function forceCloudSync() {
   }
 }
 
+let debounceTimeout: any = null;
+
 export function startSyncEngine() {
   if (syncInterval) return;
   
@@ -62,17 +62,16 @@ export function startSyncEngine() {
     forceCloudSync();
   }, 5 * 60 * 1000);
   
-  // Also hook into Zustand to trigger immediate sync when a report is verified
+  // Trigger instant sync (debounced) when orders or patients change
   useStore.subscribe((state, prevState) => {
-    // Check if the number of reported orders changed
-    const reportedNow = state.orders.filter(o => o.status === "reported").length;
-    const reportedBefore = prevState.orders.filter(o => o.status === "reported").length;
+    const ordersChanged = state.orders !== prevState.orders;
+    const patientsChanged = state.patients !== prevState.patients;
     
-    if (reportedNow > reportedBefore) {
-      // Delay slightly to batch rapid verifications
-      setTimeout(() => {
+    if (ordersChanged || patientsChanged) {
+      if (debounceTimeout) clearTimeout(debounceTimeout);
+      debounceTimeout = setTimeout(() => {
         forceCloudSync();
-      }, 2000);
+      }, 1500); // 1.5 second debounce to batch rapid typing/updates
     }
   });
   
