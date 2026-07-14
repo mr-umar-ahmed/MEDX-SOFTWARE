@@ -117,6 +117,11 @@ function ReportTab({ order }: { order: Order }) {
   const verified = order.status === "reported";
 
   function whatsapp() {
+    const tier = store.activeLicense?.tier || "Starter";
+    if (tier === "Starter") {
+      alert("WhatsApp delivery is a Pro feature.\n\nPlease upgrade your license to instantly share reports with patients.");
+      return;
+    }
     if (!patient) return;
     const text = `Namaste ${patient.name}, your test report from ${s.name} is ready.\nInvoice: ${order.invoiceNo}\nDate: ${fmtDate(order.createdAt)}\nThank you.`;
     const phone = patient.phone.replace(/\D/g, "");

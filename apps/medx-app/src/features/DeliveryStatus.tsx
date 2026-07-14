@@ -17,6 +17,11 @@ export default function DeliveryStatus() {
   });
 
   function whatsapp(orderId: string) {
+    const tier = useStore.getState().activeLicense?.tier || "Starter";
+    if (tier === "Starter") {
+      alert("WhatsApp delivery is a Pro feature.\n\nPlease upgrade your license to instantly share reports with patients.");
+      return;
+    }
     const o = orders.find((x) => x.id === orderId);
     if (!o) return;
     const p = getPatient(o.patientId);

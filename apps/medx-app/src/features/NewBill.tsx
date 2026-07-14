@@ -82,6 +82,18 @@ export default function NewBill() {
 
   function save() {
     if (!canSave) return;
+
+    // Enforce Starter Tier Limits
+    const tier = store.activeLicense?.tier || "Starter";
+    if (tier === "Starter") {
+      const todayStr = new Date().toDateString();
+      const todayOrders = store.orders.filter((o) => new Date(o.createdAt).toDateString() === todayStr);
+      if (todayOrders.length >= 15) {
+        alert("Daily patient limit (15) reached for Starter plan.\n\nPlease upgrade to Pro or Enterprise to unlock unlimited daily patient registrations.");
+        return;
+      }
+    }
+
     const order = store.createOrder({
       patient: selected
         ? { ...selected }
@@ -97,6 +109,7 @@ export default function NewBill() {
     if (prefill.estimateId) store.markEstimateConverted(prefill.estimateId, order.id);
     nav(`/order/${order.id}?tab=samples`);
   }
+
 
   function findOrCreateDoctor(nm: string): string {
     const existing = store.doctors.find((d) => d.name.toLowerCase() === nm.toLowerCase());
