@@ -4,6 +4,18 @@ import path from "path";
 
 const BUCKET_URL = "https://kvdb.io/cae41247-25e4-414b-b0fa-bf1b49651a2c";
 
+function setCorsHeaders(res: NextResponse): NextResponse {
+  res.headers.set("Access-Control-Allow-Origin", "*");
+  res.headers.set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PATCH, PUT");
+  res.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  return res;
+}
+
+export async function OPTIONS() {
+  const res = new NextResponse(null, { status: 204 });
+  return setCorsHeaders(res);
+}
+
 function getLocalDbPath() {
   const isVercel = process.env.VERCEL === "1" || process.env.VERCEL_ENV;
   const dir = isVercel ? "/tmp" : process.cwd();
@@ -16,7 +28,8 @@ export async function POST(req: Request) {
     const { licenseKey, labSettings, catalog, data } = payload;
     
     if (!licenseKey || !labSettings) {
-      return NextResponse.json({ success: false, error: "Missing license key or lab settings" }, { status: 400 });
+      const res = NextResponse.json({ success: false, error: "Missing license key or lab settings" }, { status: 400 });
+      return setCorsHeaders(res);
     }
 
     // 1. Read existing from KV store (with local filesystem fallback)
@@ -73,9 +86,11 @@ export async function POST(req: Request) {
       console.error("KVDB Write failed for cloud_db:", err);
     }
 
-    return NextResponse.json({ success: true, timestamp: new Date().toISOString() });
+    const res = NextResponse.json({ success: true, timestamp: new Date().toISOString() });
+    return setCorsHeaders(res);
   } catch (error: any) {
     console.error("Sync Error:", error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    const res = NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return setCorsHeaders(res);
   }
 }
