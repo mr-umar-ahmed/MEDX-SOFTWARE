@@ -214,7 +214,7 @@ export const useStore = create<StoreState>()(
         Technician: ["/", "/samples", "/results", "/reports", "/reagents", "/suppliers", "/qc", "/temperature", "/calibrations", "/interfacing"],
         Pathologist: ["/", "/results", "/verification", "/reports", "/qc", "/temperature", "/calibrations", "/sops", "/interfacing"]
       },
-      licenseToken: undefined,
+      licenseToken: "",
       activeLicense: null,
       interfacingLogs: [],
 
@@ -245,7 +245,7 @@ export const useStore = create<StoreState>()(
           // Instantly connect to the admin panel and register this device
           try {
             await checkLicenseHeartbeat(verified.licenseKey, (reason) => {
-              set({ licenseToken: undefined, activeLicense: null });
+              set({ licenseToken: "", activeLicense: null });
               alert(reason || "Your license has been deactivated.");
             });
           } catch (e) {}
@@ -592,7 +592,7 @@ export function orderDuePaise(o: Order): number {
 
 // Auto-run license token verification on startup
 if (typeof window !== "undefined") {
-  setTimeout(async () => {
+  const checkLicense = async () => {
     try {
       const token = useStore.getState().licenseToken;
       if (token) {
@@ -602,22 +602,37 @@ if (typeof window !== "undefined") {
           console.log(`✓ Active license verified: ${verified.tier} Tier for ${verified.labName}`);
           // Check-in heartbeat verification check
           checkLicenseHeartbeat(verified.licenseKey, (reason) => {
-            useStore.setState({ licenseToken: undefined, activeLicense: null });
+            useStore.setState({ licenseToken: "", activeLicense: null });
             alert(reason || "Your MedX License key has been revoked by the system administrator.");
           });
         } else {
-          useStore.setState({ activeLicense: null });
+          useStore.setState({ licenseToken: "", activeLicense: null });
           console.warn("⚠️ Stored license token failed verification.");
         }
       }
     } catch (err) {
       console.error("Startup license check failed:", err);
     }
-  }, 150);
+  };
+
+  // Run validation when Zustand hydration finishes, or immediately if already hydrated
+  if (useStore.persist?.hasHydrated()) {
+    checkLicense();
+  } else {
+    const unsub = useStore.persist?.onFinishHydration(() => {
+      checkLicense();
+      unsub();
+    });
+  }
+
+  // Backup timer in case onFinishHydration triggers early or is bypassed
+  setTimeout(() => {
+    checkLicense();
+  }, 1000);
 
   // Bind TCP Interfacing event receiver callback
   setTimeout(() => {
-    if (typeof window !== "undefined" && window.medx?.onAnalyzerRawData) {
+    if (window.medx?.onAnalyzerRawData) {
       window.medx.onAnalyzerRawData((raw) => {
         try {
           const parsed = parseAnalyzerFrame(raw);
@@ -634,4 +649,3 @@ if (typeof window !== "undefined") {
     }
   }, 300);
 }
-

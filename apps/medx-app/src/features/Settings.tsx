@@ -37,7 +37,7 @@ export default function Settings() {
 
   function handleDeactivate() {
     if (confirm("Deactivating your license will revert the lab to the Starter free tier. Continue?")) {
-      useStore.setState({ licenseToken: undefined, activeLicense: null });
+      useStore.setState({ licenseToken: "", activeLicense: null });
     }
   }
 
