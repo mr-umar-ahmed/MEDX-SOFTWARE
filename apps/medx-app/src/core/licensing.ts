@@ -124,7 +124,7 @@ export async function checkLicenseHeartbeat(licenseKey: string, onRevoked: (reas
   try {
     const deviceId = getOrCreateDeviceId();
     const hostname = await getDeviceHostname();
-    const adminUrl = "http://localhost:3000/api/heartbeat";
+    const adminUrl = "https://medx-admin-lac.vercel.app/api/heartbeat";
     const res = await fetch(adminUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
