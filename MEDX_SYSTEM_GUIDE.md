@@ -59,8 +59,17 @@ The MedX Desktop App is an offline-first laboratory information management syste
 - **Machine Interfacing**:
   - Connect diagnostic equipment directly via **Serial (COM)** ports or **TCP/IP** networks.
   - Raw analyzer outputs (HL7/ASTM formats) are received and can be mapped automatically to patient records to prevent typing errors.
-- **QC Logs**: Track control run values and evaluate them against **Westgard rules** to monitor test calibration.
+- **Interactive QC & LJ Charts**: 
+  - Log control runs (Level 1 Normal, Level 2 High, Level 3 Low) with targets (Mean and Standard Deviation).
+  - Visualize control trends instantly using the interactive, zero-dependency **Levey-Jennings (LJ) SVG Charts** showing deviation lanes from Mean up to $\pm 3\text{SD}$.
+  - Values are automatically evaluated against the **Westgard Rules Engine** (flagging $1_{3s}$ rejection, $2_{2s}$ rejection, $R_{4s}$ rejection, $10_x$ rejection, and $1_{2s}$ warnings) to monitor test accuracy.
 - **SOP Viewer**: Access digital Standard Operating Procedures guidelines directly in the workspace.
+
+### LAN Multi-Counter Synchronization (Pro / Enterprise)
+- **Settings Configuration**: Labs running Pro or Enterprise subscriptions can connect up to 3 PCs (Pro) or unlimited PCs (Enterprise) on the same local area network.
+- **Host vs Client Roles**:
+  - **Host Mode**: Sets up this PC as the central server listening on Port **8095**.
+  - **Client Mode**: Connects to the Host PC's local IP address (e.g., `192.168.1.10`). All database mutations are transparently synchronized in real-time.
 
 ---
 
@@ -68,13 +77,15 @@ The MedX Desktop App is an offline-first laboratory information management syste
 
 ### Tech Stack
 * **Runtime**: Electron
-* **Frontend**: React 18, TypeScript, Vite
-* **Database**: SQLite3 (native node module)
+* **Frontend**: React 19, TypeScript, Vite
+* **Database**: SQLite3 (native node module) with fallback JSON file persistence
 * **State Management**: Zustand
-* **Packaging**: Electron Builder
+* **Packaging**: Electron Builder (NSIS installers + Portable builds)
 
 ### Architecture & Process Model
 * **Main Process (`electron/main.ts`)**: Handles native desktop interactions, SQLite operations, serial/TCP communication with diagnostic instruments, and checks for updates via `electron-updater`.
+* **LAN Sync Socket Server**: Electron main launches a raw TCP socket server on port `8095` in Host mode. Client processes connect and communicate via Line-Delimited JSON (NDJSON) packets.
+* **State Propagation**: Changes written to `medx-store-v1` are broadcast to local renderers using Electron IPC `medx-broadcast` channels, triggering Zustand to force-reload state.
 * **Renderer Process**: The React application runs in a chromium instance. It utilizes `HashRouter` for routing to prevent issues with filesystem paths in production.
 * **Preload Script (`electron/preload.ts`)**: Exposes safe, restricted APIs to the React renderer via `contextBridge` to prevent security vulnerabilities.
 
@@ -83,6 +94,7 @@ The MedX Desktop App is an offline-first laboratory information management syste
 * The license token is a base64-encoded string: `payload.signature`.
 * **Renderer Verification**: When the app starts, it decodes the payload, imports the embedded public key, and verifies the signature locally without requiring internet access.
 * **License Heartbeat**: An asynchronous background check runs in `isRouteAllowed` and settings pages. If the computer is connected to the internet, it pings the admin panel endpoint (`/api/heartbeat`) to check if the license key has been revoked remotely.
+* **Heartbeat unknown_key Guard**: Heartbeat replies carrying `unknown_key` status do NOT deactivate the client (offline-first resilience). Only explicit `revoked` or `device_limit` payloads cause lockout.
 
 ---
 
@@ -140,7 +152,9 @@ The Super Admin ERP is the command center for you, the software owner, to manage
    - Browse the master list of all diagnostic centers using MedX.
    - Click `Generate License Key` ➔ Enter the lab's name ➔ Select the subscription tier (`Starter`, `Pro`, or `Enterprise`) ➔ Click **Generate**.
    - Copy the resulting secure key and send it to your client to activate their offline desktop app.
-4. **Helpdesk**: Respond to technical setup queries and support tickets raised by active labs.
+4. **Operations Audit Trail**:
+   - View a comprehensive, immutable log of all actions taken by administrators (such as key generation, plan updates, extensions, and deactivations) at the `/audit` tab.
+5. **Helpdesk**: Respond to technical setup queries and support tickets raised by active labs.
 
 ---
 
@@ -149,11 +163,17 @@ The Super Admin ERP is the command center for you, the software owner, to manage
 ### Tech Stack
 * **Framework**: Next.js 16 (App Router)
 * **Icons**: `lucide-react`
+* **Storage**: Private Vercel Blob store (`medx-db` bucket)
 * **Styling**: Consistent visual aesthetics imported from `medx-web`'s glassmorphism style rules.
 
 ### Key Generator & License Signing
 * To issue keys, the admin panel encodes license properties (Lab Name, Expiry, Tier) and signs them using the private counterpart of the ECDSA `P-256` key.
 * The heartbeat endpoint `/api/heartbeat` logs incoming pings containing device IDs and hostnames. If a license has been disabled in the admin backend, the endpoint responds with `{ active: false }`, prompting the client's desktop app to restrict access.
+
+### Automation & Integrations
+* **Daily Cron Audit (`/api/cron`)**: Run via standard Vercel Cron schedulers. It audits all active licenses daily. Expiring licenses ($\le 15$ days) receive admin notice warnings, and licenses unpaid past the 7-day grace period are auto-revoked.
+* **Razorpay Payments Webhook (`/api/webhooks/razorpay`)**: Receives automated `payment.captured` webhooks. If the payment payload includes a matching `licenseKey` in its notes, the API dynamically extends the validity of the license by $N$ days and appends a transaction log in the ledger.
+* **Audit Trail Storage (`admin-audit/`)**: Every mutation in the database triggers a JSON logging hook writing audit records to Vercel Blob store under a timestamped document. These are parsed and displayed securely at `/audit`.
 
 ---
 
