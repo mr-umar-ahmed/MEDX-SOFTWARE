@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { writeJson } from "@/lib/cloudStore";
+import { verifyLicenseToken } from "@/lib/licenseVerify";
 
 /**
  * Receives the cloud-sync push from a licensed lab's desktop app and stores it
@@ -45,18 +46,31 @@ async function lookupLicense(licenseKey: string): Promise<DirectoryLab | null> {
 export async function POST(req: Request) {
   try {
     const payload = await req.json();
-    const { licenseKey, labSettings, catalog, data } = payload;
+    const { licenseToken, labSettings, catalog, data } = payload;
 
-    if (!licenseKey || !labSettings) {
+    if (!licenseToken || !labSettings) {
       return setCorsHeaders(
         NextResponse.json(
-          { success: false, error: "Missing license key or lab settings" },
+          { success: false, error: "Missing license token or lab settings" },
           { status: 400 }
         )
       );
     }
 
-    const lab = await lookupLicense(String(licenseKey));
+    // Lab IDs are public (labs directory) — only the cryptographically signed
+    // license token proves the push really comes from that lab's software.
+    const verified = await verifyLicenseToken(String(licenseToken));
+    if (!verified) {
+      return setCorsHeaders(
+        NextResponse.json(
+          { success: false, error: "Invalid or expired license token." },
+          { status: 401 }
+        )
+      );
+    }
+    const licenseKey = verified.licenseKey;
+
+    const lab = await lookupLicense(licenseKey);
     if (!lab || lab.status !== "active") {
       return setCorsHeaders(
         NextResponse.json(

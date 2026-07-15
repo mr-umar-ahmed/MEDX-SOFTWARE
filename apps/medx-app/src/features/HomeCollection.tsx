@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useStore } from "../data/store";
 import { fmtDate } from "../lib/format";
 import { Page, Section, Field, Empty, useForm, todayISO } from "../ui/bits";
+import { pullWebBookings } from "../core/sync";
 import type { HomeVisit } from "../data/types";
 
 const STATUS_BADGE: Record<HomeVisit["status"], string> = {
@@ -11,7 +12,17 @@ const STATUS_BADGE: Record<HomeVisit["status"], string> = {
 export default function HomeCollection() {
   const store = useStore();
   const [show, setShow] = useState(false);
+  const [fetching, setFetching] = useState(false);
+  const [fetchMsg, setFetchMsg] = useState<string | null>(null);
   const { form, bind, reset } = useForm({ date: todayISO(), slot: "09:00 - 11:00", patientName: "", phone: "", address: "", phlebotomist: "", notes: "" });
+
+  async function fetchOnlineBookings() {
+    setFetching(true);
+    setFetchMsg(null);
+    const count = await pullWebBookings();
+    setFetching(false);
+    setFetchMsg(count > 0 ? `${count} new online booking${count > 1 ? "s" : ""} imported.` : "No new online bookings.");
+  }
 
   function save() {
     if (!form.patientName.trim() || !form.address.trim()) return;
@@ -33,7 +44,13 @@ export default function HomeCollection() {
 
   return (
     <Page title="Home Collection" sub="Schedule and manage phlebotomist home visits." actions={
-      <button className="btn btn-primary" onClick={() => setShow(!show)}>＋ New Visit</button>
+      <div className="row" style={{ gap: 8, alignItems: "center" }}>
+        {fetchMsg && <span className="muted" style={{ fontSize: 12 }}>{fetchMsg}</span>}
+        <button className="btn" onClick={fetchOnlineBookings} disabled={fetching}>
+          {fetching ? "Checking…" : "⟳ Fetch Online Bookings"}
+        </button>
+        <button className="btn btn-primary" onClick={() => setShow(!show)}>＋ New Visit</button>
+      </div>
     }>
       {show && (
         <Section title="Schedule Home Visit">

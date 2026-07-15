@@ -215,6 +215,8 @@ export interface HomeVisit {
   phlebotomist?: string;
   status: "Scheduled" | "Collected" | "Received" | "Cancelled";
   notes?: string;
+  /** Online-booking id (from the public website) — used to dedupe imports. */
+  webRef?: string;
 }
 
 /* ---------------- Inventory ---------------- */

@@ -16,11 +16,13 @@ interface LabItem {
 
 export default function BookingPage() {
   const [labs, setLabs] = useState<LabItem[]>([]);
-  const [selectedLab, setSelectedLab] = useState("");
+  const [selectedLab, setSelectedLab] = useState<LabItem | null>(null);
   const [labSearch, setLabSearch] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -52,18 +54,45 @@ export default function BookingPage() {
   );
 
   function handleSelectLab(lab: LabItem) {
-    setSelectedLab(lab.name);
+    setSelectedLab(lab);
     setLabSearch(lab.name + " (" + lab.location + ")");
     setShowDropdown(false);
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedLab) {
       alert("Please select a diagnostic laboratory.");
       return;
     }
-    setSubmitted(true);
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const res = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          labId: selectedLab.id,
+          name: formData.name,
+          phone: formData.phone,
+          age: formData.age,
+          address: formData.address,
+          date: formData.date,
+          timeSlot: formData.timeSlot,
+          tests: formData.tests,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSubmitted(true);
+      } else {
+        setSubmitError(data.error || "Booking failed. Please try again or call the lab directly.");
+      }
+    } catch {
+      setSubmitError("Network error. Please check your connection and try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (submitted) {
@@ -76,9 +105,9 @@ export default function BookingPage() {
             </div>
             <h1 className="section-title" style={{ fontSize: 24, marginBottom: 8 }}>Booking Requested!</h1>
             <p className="text-muted" style={{ fontSize: 15, marginBottom: 24 }}>
-              Your home collection request has been submitted to <b>{selectedLab}</b>. The phlebotomist will contact you shortly on <b>{formData.phone}</b> to confirm details.
+              Your home collection request has been submitted to <b>{selectedLab?.name}</b>. The phlebotomist will contact you shortly on <b>{formData.phone}</b> to confirm details.
             </p>
-            <button className="btn btn-primary" onClick={() => { setSubmitted(false); setSelectedLab(""); setLabSearch(""); setFormData({ name: "", phone: "", age: "", address: "", date: "", timeSlot: "07:00 AM - 09:00 AM", tests: "" }); }}>
+            <button className="btn btn-primary" onClick={() => { setSubmitted(false); setSelectedLab(null); setLabSearch(""); setFormData({ name: "", phone: "", age: "", address: "", date: "", timeSlot: "07:00 AM - 09:00 AM", tests: "" }); }}>
               Book Another Collection
             </button>
           </div>
@@ -112,7 +141,7 @@ export default function BookingPage() {
                   onChange={(e) => {
                     setLabSearch(e.target.value);
                     setShowDropdown(true);
-                    if (selectedLab) setSelectedLab("");
+                    if (selectedLab) setSelectedLab(null);
                   }}
                   onFocus={() => setShowDropdown(true)}
                 />
@@ -184,8 +213,14 @@ export default function BookingPage() {
                 <div>Our phlebotomists follow 100% sterile safety protocols and use disposable gloves and single-use vacutainers.</div>
               </div>
 
-              <button type="submit" className="btn btn-primary btn-block">
-                Request Sample Collection
+              {submitError && (
+                <div className="alert" style={{ marginBottom: 16, color: "#dc2626", border: "1px solid #fecaca", background: "#fef2f2", padding: 12, borderRadius: 8, fontSize: 14 }}>
+                  {submitError}
+                </div>
+              )}
+
+              <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>
+                {submitting ? "Submitting..." : "Request Sample Collection"}
               </button>
             </form>
           )}
