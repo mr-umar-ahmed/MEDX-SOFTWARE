@@ -1,96 +1,95 @@
 import { NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import { writeJson } from "@/lib/cloudStore";
 
-const BUCKET_URL = "https://kvdb.io/cae41247-25e4-414b-b0fa-bf1b49651a2c";
+/**
+ * Receives the cloud-sync push from a licensed lab's desktop app and stores it
+ * as a per-lab document ("labs/<licenseKey>") in the private blob store.
+ *
+ * The license key is validated against the admin panel's public labs
+ * directory: unknown, revoked/expired, or Starter-tier keys are rejected
+ * (the patient portal is a Pro/Enterprise feature).
+ */
+
+const ADMIN_URL = process.env.MEDX_ADMIN_URL || "https://medx-admin-lac.vercel.app";
 
 function setCorsHeaders(res: NextResponse): NextResponse {
   res.headers.set("Access-Control-Allow-Origin", "*");
-  res.headers.set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PATCH, PUT");
-  res.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.headers.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.headers.set("Access-Control-Allow-Headers", "Content-Type");
   return res;
 }
 
 export async function OPTIONS() {
-  const res = new NextResponse(null, { status: 204 });
-  return setCorsHeaders(res);
+  return setCorsHeaders(new NextResponse(null, { status: 204 }));
 }
 
-function getLocalDbPath() {
-  const isVercel = process.env.VERCEL === "1" || process.env.VERCEL_ENV;
-  const dir = isVercel ? "/tmp" : process.cwd();
-  return path.join(dir, "cloud-db.json");
+interface DirectoryLab {
+  id: string;
+  labName: string;
+  tier: "Starter" | "Pro" | "Enterprise";
+  status: "active" | "inactive";
+}
+
+async function lookupLicense(licenseKey: string): Promise<DirectoryLab | null> {
+  try {
+    const res = await fetch(`${ADMIN_URL}/api/labs-directory`, { cache: "no-store" });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.success || !Array.isArray(data.labs)) return null;
+    return data.labs.find((l: DirectoryLab) => l.id === licenseKey) ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function POST(req: Request) {
   try {
     const payload = await req.json();
     const { licenseKey, labSettings, catalog, data } = payload;
-    
+
     if (!licenseKey || !labSettings) {
-      const res = NextResponse.json({ success: false, error: "Missing license key or lab settings" }, { status: 400 });
-      return setCorsHeaders(res);
+      return setCorsHeaders(
+        NextResponse.json(
+          { success: false, error: "Missing license key or lab settings" },
+          { status: 400 }
+        )
+      );
     }
 
-    // 1. Read existing from KV store (with local filesystem fallback)
-    let db: { labs: Record<string, any> } = { labs: {} };
-    const localPath = getLocalDbPath();
-
-    try {
-      const res = await fetch(`${BUCKET_URL}/cloud_db`, {
-        method: "GET",
-        headers: { "Cache-Control": "no-cache" }
-      });
-      if (res.ok) {
-        const text = await res.text();
-        db = JSON.parse(text);
-        try {
-          fs.writeFileSync(localPath, text, "utf-8");
-        } catch (e) {}
-      }
-    } catch (e) {
-      console.error("KVDB Fetch failed for cloud_db, attempting local fallback:", e);
-      if (fs.existsSync(localPath)) {
-        try {
-          db = JSON.parse(fs.readFileSync(localPath, "utf-8"));
-        } catch (err) {}
-      }
+    const lab = await lookupLicense(String(licenseKey));
+    if (!lab || lab.status !== "active") {
+      return setCorsHeaders(
+        NextResponse.json(
+          { success: false, error: "License key is not recognized or is inactive." },
+          { status: 403 }
+        )
+      );
+    }
+    if (lab.tier === "Starter") {
+      return setCorsHeaders(
+        NextResponse.json(
+          { success: false, error: "Patient portal sync requires a Pro or Enterprise plan." },
+          { status: 403 }
+        )
+      );
     }
 
-    if (!db.labs) db.labs = {};
-
-    // 2. Update the partition for this specific lab
-    db.labs[licenseKey] = {
+    await writeJson(`labs/${licenseKey}`, {
       licenseKey,
       settings: labSettings,
       catalog: catalog || [],
       orders: data?.orders || [],
       patients: data?.patients || [],
-      lastSyncedAt: new Date().toISOString()
-    };
+      lastSyncedAt: new Date().toISOString(),
+    });
 
-    // 3. Write locally
-    const text = JSON.stringify(db, null, 2);
-    try {
-      fs.writeFileSync(localPath, text, "utf-8");
-    } catch (e) {}
-
-    // 4. Push to KV store
-    try {
-      await fetch(`${BUCKET_URL}/cloud_db`, {
-        method: "PUT",
-        body: text,
-        headers: { "Content-Type": "application/json" }
-      });
-    } catch (err) {
-      console.error("KVDB Write failed for cloud_db:", err);
-    }
-
-    const res = NextResponse.json({ success: true, timestamp: new Date().toISOString() });
-    return setCorsHeaders(res);
-  } catch (error: any) {
+    return setCorsHeaders(
+      NextResponse.json({ success: true, timestamp: new Date().toISOString() })
+    );
+  } catch (error) {
     console.error("Sync Error:", error);
-    const res = NextResponse.json({ success: false, error: error.message }, { status: 500 });
-    return setCorsHeaders(res);
+    return setCorsHeaders(
+      NextResponse.json({ success: false, error: String(error) }, { status: 500 })
+    );
   }
 }
