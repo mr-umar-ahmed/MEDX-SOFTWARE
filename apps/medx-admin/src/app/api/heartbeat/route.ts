@@ -27,11 +27,28 @@ export async function POST(req: Request) {
     const result = await registerHeartbeat(licenseKey, deviceId, resolvedHostname);
 
     if (!result.active || !result.record) {
+      let finalCode = result.code;
+      let finalError = result.error;
+
+      // If license not found in DB, check if the client holds a genuinely signed token.
+      // If the token is validly signed, it must have been deleted by the admin.
+      if (result.code === "unknown_key" && currentToken) {
+        try {
+          const proof = await verifyTokenSignature(String(currentToken));
+          if (proof && proof.licenseKey === licenseKey) {
+            finalCode = "revoked";
+            finalError = "This license has been deactivated and deleted by the administrator.";
+          }
+        } catch (e) {
+          console.error("Error verifying currentToken for deleted check:", e);
+        }
+      }
+
       const res = NextResponse.json({
         success: true,
         active: false,
-        code: result.code,
-        error: result.error,
+        code: finalCode,
+        error: finalError,
       });
       return setCorsHeaders(res);
     }
