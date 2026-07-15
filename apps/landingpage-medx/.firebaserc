@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "medx-landingpage-placeholder"
-  }
+    "default": "medx-lab"
+  },
+  "targets": {},
+  "etags": {}
 }

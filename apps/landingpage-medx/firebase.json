@@ -14,15 +14,15 @@
     ],
     "headers": [
       {
-        "source": "/downloads/MedX-Setup-0.2.0.exe",
+        "source": "/downloads/MedX-Setup-0.2.0.zip",
         "headers": [
           {
             "key": "Content-Type",
-            "value": "application/octet-stream"
+            "value": "application/zip"
           },
           {
             "key": "Content-Disposition",
-            "value": "attachment; filename=\"MedX-Setup-0.2.0.exe\""
+            "value": "attachment; filename=\"MedX-Setup-0.2.0.zip\""
           }
         ]
       }
