@@ -6,14 +6,20 @@ let lastSyncTime = 0;
 
 export async function forceCloudSync() {
   const state = useStore.getState();
-  
+
+  // Cloud sync powers the QR patient portal — a Pro/Enterprise feature.
+  // Starter (or unlicensed) installs stay fully offline: no patient data
+  // ever leaves the lab PC.
+  const license = state.activeLicense;
+  if (!license || license.tier === "Starter") return false;
+
   // We sync ALL orders and patients so the patient portal can show pending statuses
   const orders = state.orders;
   const patients = state.patients;
-  
+
   const payload = {
     type: "FULL_SYNC",
-    licenseKey: state.activeLicense?.licenseKey || "FREE-STARTER-TIER",
+    licenseKey: license.licenseKey,
     labSettings: {
       name: state.settings.name,
       city: state.settings.city,

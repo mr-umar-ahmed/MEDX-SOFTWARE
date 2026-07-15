@@ -7,11 +7,13 @@ export interface LicenseData {
   tier: "Starter" | "Pro" | "Enterprise";
 }
 
+// Public half of the license-signing keypair (rotated 2026-07-15; the private
+// key lives only in the admin panel's environment variables).
 const PUBLIC_KEY_JWK = {
   kty: "EC",
   crv: "P-256",
-  x: "UG_kZ8mA9UgIY8UCE5D0AbjhCRETeRfgAupo-_XhWg4",
-  y: "71h7PikOhdbV0u41OdFbdjpQ51Gu7_EWnEU8R5t5P7g",
+  x: "lqhaPVXKqrbQgW9KJlxziq8aH8FTW5uOCTdo4zrdbN8",
+  y: "P072Kzde3IUJz3KFPmDfc4FUEWcrf9wBFJvAlk-ioY8",
 };
 
 // Base64Url string decoder helper
