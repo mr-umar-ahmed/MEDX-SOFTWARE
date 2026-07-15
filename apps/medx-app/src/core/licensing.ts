@@ -158,7 +158,7 @@ export async function checkLicenseHeartbeat(
   const at = new Date().toISOString();
   try {
     const deviceId = getOrCreateDeviceId();
-    const hostname = await getDeviceHostname();
+    const hostname = (await getDeviceHostname()) || "unknown-pc";
     const adminUrl = "https://medx-admin-lac.vercel.app/api/heartbeat";
     const res = await fetch(adminUrl, {
       method: "POST",

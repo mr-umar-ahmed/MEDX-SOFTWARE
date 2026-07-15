@@ -17,13 +17,14 @@ export async function OPTIONS() {
 export async function POST(req: Request) {
   try {
     const { licenseKey, deviceId, hostname, currentToken } = await req.json();
-    if (!licenseKey || !deviceId || !hostname) {
-      const res = NextResponse.json({ success: false, error: "Missing licenseKey, deviceId or hostname" }, { status: 400 });
+    const resolvedHostname = hostname || "unknown-pc";
+    if (!licenseKey || !deviceId) {
+      const res = NextResponse.json({ success: false, error: "Missing licenseKey or deviceId" }, { status: 400 });
       return setCorsHeaders(res);
     }
 
     // Register heartbeat timestamp and check device connection limit
-    const result = await registerHeartbeat(licenseKey, deviceId, hostname);
+    const result = await registerHeartbeat(licenseKey, deviceId, resolvedHostname);
 
     if (!result.active || !result.record) {
       const res = NextResponse.json({

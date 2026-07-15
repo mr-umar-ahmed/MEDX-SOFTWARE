@@ -274,6 +274,10 @@ app.whenReady().then(() => {
     removeStore(key);
   });
 
+  ipcMain.handle("get-hostname", () => {
+    return os.hostname();
+  });
+
   // Cross-window relay: forwards a renderer's broadcast (e.g. queue updates)
   // to every other window, so the counter display stays live.
   ipcMain.on("medx-broadcast", (event, payload: string) => {
