@@ -57,6 +57,8 @@ const DEFAULT_SETTINGS: LabSettings = {
   reportShowLogo: true,
   abdmEnabled: false,
   abdmHipId: "",
+  lanRole: "standalone",
+  lanHostIp: "127.0.0.1",
 };
 
 function uid(prefix: string): string {

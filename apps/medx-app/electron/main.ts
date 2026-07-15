@@ -60,6 +60,175 @@ function createWindow() {
   });
 }
 
+// --- LAN Multi-Counter Synchronizer ---
+let activeLanServer: net.Server | null = null;
+let activeClients: net.Socket[] = [];
+let clientSocket: net.Socket | null = null;
+let currentRole = "standalone";
+let currentHostIp = "";
+
+function getLanSettings(): { lanRole: string; lanHostIp: string } {
+  try {
+    const rawStore = getStore("medx-store-v1");
+    if (rawStore) {
+      const storeObj = JSON.parse(rawStore);
+      const settings = storeObj.state?.settings || {};
+      return {
+        lanRole: settings.lanRole || "standalone",
+        lanHostIp: settings.lanHostIp || "127.0.0.1",
+      };
+    }
+  } catch (e) {
+    console.error("Error reading LAN settings from DB:", e);
+  }
+  return { lanRole: "standalone", lanHostIp: "127.0.0.1" };
+}
+
+function shutdownLanSync() {
+  if (activeLanServer) {
+    activeLanServer.close();
+    activeLanServer = null;
+    console.log("Shut down active LAN Sync Server.");
+  }
+  activeClients.forEach((s) => s.destroy());
+  activeClients = [];
+
+  if (clientSocket) {
+    clientSocket.destroy();
+    clientSocket = null;
+    console.log("Disconnected LAN Sync Client.");
+  }
+}
+
+function broadcastToClients(msg: any, excludeSocket?: net.Socket) {
+  const payload = JSON.stringify(msg) + "\n";
+  activeClients.forEach((socket) => {
+    if (socket !== excludeSocket && !socket.destroyed) {
+      socket.write(payload);
+    }
+  });
+}
+
+function relayToLocalRenderers(value: string) {
+  try {
+    const storeObj = JSON.parse(value);
+    const syncPayload = {
+      type: "queue",
+      tokens: storeObj.state?.tokens || [],
+      seq: storeObj.state?.seq || {},
+    };
+    const payloadStr = JSON.stringify(syncPayload);
+    for (const wc of webContents.getAllWebContents()) {
+      if (!wc.isDestroyed()) {
+        wc.send("medx-broadcast", payloadStr);
+      }
+    }
+  } catch (e) {
+    console.error("Error relaying store broadcast locally:", e);
+  }
+}
+
+let reconnectTimeout: any = null;
+function connectToHost(hostIp: string) {
+  if (reconnectTimeout) {
+    clearTimeout(reconnectTimeout);
+    reconnectTimeout = null;
+  }
+  
+  clientSocket = net.createConnection({ host: hostIp, port: 8095 }, () => {
+    console.log("✓ Connected to LAN Sync Host.");
+  });
+
+  let buffer = "";
+  clientSocket.on("data", (chunk) => {
+    buffer += chunk.toString("utf8");
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      try {
+        const msg = JSON.parse(line);
+        if ((msg.type === "init" || msg.type === "broadcast") && msg.value) {
+          setStore("medx-store-v1", msg.value);
+          relayToLocalRenderers(msg.value);
+        }
+      } catch (e) {
+        console.error("Error parsing LAN Host broadcast frame:", e);
+      }
+    }
+  });
+
+  clientSocket.on("close", () => {
+    console.log("LAN Sync connection closed. Reconnecting in 5 seconds...");
+    if (currentRole === "client") {
+      reconnectTimeout = setTimeout(() => connectToHost(hostIp), 5000);
+    }
+  });
+
+  clientSocket.on("error", (err) => {
+    console.error("LAN Sync Client connection error:", err.message);
+  });
+}
+
+function initLanSync(role: string, hostIp: string) {
+  if (role === currentRole && hostIp === currentHostIp) return;
+  
+  shutdownLanSync();
+  
+  currentRole = role;
+  currentHostIp = hostIp;
+
+  if (role === "host") {
+    console.log("Initializing LAN Sync Server on port 8095...");
+    activeLanServer = net.createServer((socket) => {
+      activeClients.push(socket);
+      console.log("LAN Sync Client connected:", socket.remoteAddress);
+
+      // Send initial store data
+      const rawStore = getStore("medx-store-v1");
+      if (rawStore) {
+        socket.write(JSON.stringify({ type: "init", value: rawStore }) + "\n");
+      }
+
+      let buffer = "";
+      socket.on("data", (chunk) => {
+        buffer += chunk.toString("utf8");
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const msg = JSON.parse(line);
+            if (msg.type === "set" && msg.value) {
+              setStore("medx-store-v1", msg.value);
+              broadcastToClients({ type: "broadcast", value: msg.value }, socket);
+              relayToLocalRenderers(msg.value);
+            }
+          } catch (e) {
+            console.error("Error parsing LAN client NDJSON:", e);
+          }
+        }
+      });
+
+      socket.on("close", () => {
+        activeClients = activeClients.filter((s) => s !== socket);
+        console.log("LAN Sync Client disconnected.");
+      });
+
+      socket.on("error", (err) => {
+        console.error("LAN Sync Server socket error:", err);
+      });
+    });
+
+    activeLanServer.listen(8095, "0.0.0.0", () => {
+      console.log("✓ LAN Sync Server listening on port 8095");
+    });
+  } else if (role === "client") {
+    console.log(`Connecting to LAN Sync Host at ${hostIp}:8095...`);
+    connectToHost(hostIp);
+  }
+}
+
 app.whenReady().then(() => {
   // Initialize local SQLite database
   initDb(app.getPath("userData"));
@@ -69,6 +238,10 @@ app.whenReady().then(() => {
     autoUpdater.checkForUpdatesAndNotify();
   }
 
+  // Initialize LAN sync engine from startup config
+  const initialLan = getLanSettings();
+  initLanSync(initialLan.lanRole, initialLan.lanHostIp);
+
   // Bind IPC database calls
   ipcMain.handle("get-store", (_event, key: string) => {
     return getStore(key);
@@ -76,6 +249,25 @@ app.whenReady().then(() => {
 
   ipcMain.handle("set-store", (_event, key: string, value: string) => {
     setStore(key, value);
+    if (key === "medx-store-v1") {
+      // If we are Host, broadcast to other counters
+      if (currentRole === "host") {
+        broadcastToClients({ type: "broadcast", value });
+      }
+      // If we are Client, push to Host PC
+      else if (currentRole === "client" && clientSocket && !clientSocket.destroyed) {
+        clientSocket.write(JSON.stringify({ type: "set", value }) + "\n");
+      }
+
+      // Intercept and update LAN configuration if modified by user settings
+      try {
+        const storeObj = JSON.parse(value);
+        const settings = storeObj.state?.settings || {};
+        const newRole = settings.lanRole || "standalone";
+        const newIp = settings.lanHostIp || "127.0.0.1";
+        initLanSync(newRole, newIp);
+      } catch (e) {}
+    }
   });
 
   ipcMain.handle("remove-store", (_event, key: string) => {

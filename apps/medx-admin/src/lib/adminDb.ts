@@ -130,7 +130,7 @@ async function signData(dataStr: string): Promise<string> {
  */
 const LICENSE_PREFIX = "license/";
 
-async function loadLicense(id: string): Promise<LicenseRecord | null> {
+export async function loadLicense(id: string): Promise<LicenseRecord | null> {
   return readJson<LicenseRecord | null>(LICENSE_PREFIX + id, null);
 }
 
@@ -207,6 +207,7 @@ export async function createLicense(
   };
 
   await saveLicense(record);
+  await logVendorAction("license.create", `Created ${tier} tier license ${id} for ${labName}`, "system");
   return record;
 }
 
@@ -215,6 +216,7 @@ export async function revokeLicense(id: string): Promise<void> {
   if (!record) return;
   record.status = "revoked";
   await saveLicense(record);
+  await logVendorAction("license.revoke", `Revoked license ${id}`, "system");
 }
 
 export async function reactivateLicense(id: string): Promise<void> {
@@ -222,6 +224,7 @@ export async function reactivateLicense(id: string): Promise<void> {
   if (!record) return;
   record.status = "active";
   await saveLicense(record);
+  await logVendorAction("license.reactivate", `Reactivated license ${id}`, "system");
 }
 
 /**
@@ -235,6 +238,7 @@ export async function deleteLicense(id: string): Promise<{ ok: boolean; error?: 
     return { ok: false, error: "Only revoked licenses can be deleted. Revoke it first." };
   }
   await deleteJson(LICENSE_PREFIX + id);
+  await logVendorAction("license.delete", `Deleted license ${id}`, "system");
   return { ok: true };
 }
 
@@ -266,6 +270,7 @@ export async function extendLicense(id: string, days: number): Promise<LicenseRe
   record.validUntil = new Date(base + days * 24 * 60 * 60 * 1000).toISOString();
   record.token = await resignToken(record);
   await saveLicense(record);
+  await logVendorAction("license.extend", `Extended license ${id} by ${days} days`, "system");
   return record;
 }
 
@@ -280,6 +285,7 @@ export async function setLicenseTier(
   record.tier = tier;
   record.token = await resignToken(record);
   await saveLicense(record);
+  await logVendorAction("license.setTier", `Set license ${id} tier to ${tier}`, "system");
   return record;
 }
 
@@ -291,6 +297,7 @@ export async function removeLicenseDevice(id: string, deviceId: string): Promise
   const before = record.devices?.length ?? 0;
   record.devices = (record.devices || []).filter((d) => d.deviceId !== deviceId);
   await saveLicense(record);
+  await logVendorAction("license.removeDevice", `Removed device ${deviceId} from license ${id}`, "system");
   return (record.devices?.length ?? 0) < before;
 }
 
@@ -493,6 +500,31 @@ export async function getGlobalConfig(): Promise<AppConfig> {
 
 export async function saveGlobalConfig(config: AppConfig): Promise<void> {
   return writeJson<AppConfig>("admin-config", config);
+}
+
+// --- Vendor Audit Log Helpers ---
+export interface AuditRecord {
+  timestamp: string;
+  action: string;
+  details: string;
+  author: string;
+}
+
+export async function logVendorAction(action: string, details: string, author: string): Promise<void> {
+  const record: AuditRecord = {
+    timestamp: new Date().toISOString(),
+    action,
+    details,
+    author,
+  };
+  await writeJson("admin-audit/" + record.timestamp, record);
+}
+
+export async function getVendorAuditLogs(): Promise<AuditRecord[]> {
+  const docs = await listJson<AuditRecord>("admin-audit/");
+  return docs.map((d) => d.value).sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  );
 }
 
 

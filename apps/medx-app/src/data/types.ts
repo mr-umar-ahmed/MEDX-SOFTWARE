@@ -24,6 +24,9 @@ export interface LabSettings {
   // ABDM
   abdmEnabled: boolean;
   abdmHipId: string;
+  // LAN Multi-Counter Settings
+  lanRole?: "standalone" | "host" | "client";
+  lanHostIp?: string;
 }
 
 /* ---------------- People ---------------- */

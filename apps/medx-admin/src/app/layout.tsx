@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
-import { LayoutDashboard, Users, Building2, Ticket, Settings, Activity } from "lucide-react";
+import { LayoutDashboard, Users, Building2, Ticket, Settings, Activity, ScrollText } from "lucide-react";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -42,6 +42,9 @@ export default function RootLayout({
             </Link>
             <Link href="/status" style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderRadius: 8, textDecoration: "none", color: "var(--fg)", fontWeight: 500 }} className="hover-bg">
               <Activity size={20} color="var(--primary)" /> Platform Status
+            </Link>
+            <Link href="/audit" style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderRadius: 8, textDecoration: "none", color: "var(--fg)", fontWeight: 500 }} className="hover-bg">
+              <ScrollText size={20} color="var(--primary)" /> Audit Logs
             </Link>
           </nav>
           

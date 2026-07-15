@@ -48,9 +48,10 @@ before the next starts.
 - ✅ Password-protected admin login (proxy auth gate); signing key moved to env vars (rotated)
 - ✅ Wire license tiers → app gating (routes, sidebar, patient/day caps, WhatsApp lock)
 
-## M6 — Pro features  ⬜
-- ⬜ Multi-counter LAN, QR patient portal, home collection, inventory, referral tracking,
-  analyzer interfacing, doctor commission, MIS, histopath narrative editor
+## M6 — Pro features  🚧
+- 🚧 Multi-counter LAN (TCP synchronizer server/client peer state replication on Port 8095)
+- ✅ Analyzer interfacing LIS (verified serial/TCP ASTM and HL7 parser frame handling)
+- ⬜ QR patient portal, home collection, inventory, referral tracking, doctor commission, MIS, histopath narrative editor
 
 ## M7 — Enterprise features  ⬜
 - ⬜ Multi-branch/cloud sync, NABL quality module, ABDM/ABHA, TPA billing, doctor portal, API
@@ -62,8 +63,7 @@ before the next starts.
 ---
 
 ## Current focus
-**M1** — scaffolding the desktop app and data layer, then M2/M3 (catalog + tested domain logic),
-then the M4 vertical slice that a real lab can use end-to-end.
+**M6** — building out Pro tier modules (Multi-counter LAN state replication, LIS interfaces, inventory, doctor commissions).
 
 ## Decisions log
 - **2026-07-13:** Electron over Tauri (no Rust toolchain; runs on old Windows; single .exe).
@@ -79,3 +79,4 @@ then the M4 vertical slice that a real lab can use end-to-end.
   only `/api/heartbeat` + sanitized `/api/labs-directory`.
 - **2026-07-15:** Patient-portal sync is validated server-side: unknown/revoked keys rejected,
   Starter tier rejected (portal is Pro+; Starter data never leaves the lab PC).
+- **2026-07-15:** Automated Vercel cron route for license audits and expiration messages; Razorpay payment captured webhooks; immutable operator audit trail at /audit; local network peer-to-peer TCP data store sync on Port 8095.

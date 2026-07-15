@@ -8,7 +8,7 @@ import { ADMIN_COOKIE, verifySessionToken } from "@/lib/adminAuth";
  * software (desktop heartbeat) and the public patient website (labs
  * directory).
  */
-const PUBLIC_PATHS = ["/login", "/api/auth", "/api/heartbeat", "/api/labs-directory"];
+const PUBLIC_PATHS = ["/login", "/api/auth", "/api/heartbeat", "/api/labs-directory", "/api/cron", "/api/webhooks/razorpay"];
 
 function isPublic(pathname: string): boolean {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));

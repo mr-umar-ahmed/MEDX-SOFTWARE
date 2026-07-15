@@ -33,11 +33,13 @@ Deep documentation: `docs/ARCHITECTURE.md`, `docs/FEATURES-AND-PLANS.md`, `docs/
 - Admin panel: password login (fail-closed `src/proxy.ts`), license lifecycle (extend / setTier /
   removeDevice / setMessage / revoke / reactivate / delete-when-revoked), CRM, payments ledger,
   tickets, **Platform Status** page (blob + website probes, per-lab heartbeat/sync freshness).
+  Includes automated daily subscription cron audits, Razorpay webhook payload handlers, and a secure system audit trail at `/audit`.
 - Patient site: 2026 redesign (aurora hero/glass/bento), report portal (invoice+phone), home
   collection **bookings that flow into the desktop app** (token-authed pull + ack-delete),
   lab directory + catalog.
+- LAN Sync: lightweight TCP-based Multi-Counter sync engine on port 8095 replicating database state changes between Host and Client PCs, withSettings UI gated by license tiers.
 - Storage: private **Vercel Blob** store `medx-db` (team `medx-lab`); licenses are **one document
-  each** (`license/<id>`); per-lab portal docs `labs/<licenseKey>`; bookings `bookings/<licenseKey>`.
+  each** (`license/<id>`); per-lab portal docs `labs/<licenseKey>`; bookings `bookings/<licenseKey>`; and vendor audit logs `admin-audit/<timestamp>`.
 - 19/19 unit tests (money/GST/FY numbering/ranges), clean `tsc` across all apps.
 
 ## 3. Critical context & gotchas (violating these has bitten us before)
@@ -135,17 +137,17 @@ Prioritized. Each item is self-contained; verify end-to-end before moving on.
    workflow (tag → build → upload `MedX-Setup-x.y.z.exe` + `latest.yml`).
 2. **Windows code-signing certificate.** Builds are unsigned → SmartScreen scares labs.
    (Requires the owner to purchase a cert; wire it into electron-builder config.)
-3. **Automated renewal reminders.** Admin-side job (Vercel cron) that sets `adminMessage` for
+3. **Automated renewal reminders (DONE).** Admin-side job (Vercel cron) that sets `adminMessage` for
    licenses expiring in ≤15 days and lists them on the Overview. Optionally auto-revoke N days
    after expiry.
-4. **Payment collection for renewals.** Razorpay payment links (vendor's account) attached to a
+4. **Payment collection for renewals (DONE).** Razorpay payment links (vendor's account) attached to a
    license: generate link in Manage panel, webhook marks payment → auto-extend license →
    ledger entry. Keeps the ₹0-infra constraint (Razorpay is pay-per-use).
 5. **CI pipeline.** GitHub Actions: typecheck + vitest + `next build` on every push/PR to `main`.
 6. **Admin panel responsiveness.** The panel is desktop-only CSS; the owner manages from a phone.
 
 ### P1 — Promised plan features not yet built (see docs/FEATURES-AND-PLANS.md)
-7. **LAN multi-counter (Pro promise).** Multiple PCs in one lab sharing the SQLite DB — the
+7. **LAN multi-counter (DONE).** Multiple PCs in one lab sharing the SQLite DB — the
    Electron main already has TCP infra; design: one PC hosts, others connect over LAN (or sync
    via the existing IPC-style store API over sockets). Device slots already support 3 for Pro.
 8. **WhatsApp Cloud API delivery.** Today WhatsApp = `wa.me` deep links (manual send). Add
@@ -170,7 +172,7 @@ Prioritized. Each item is self-contained; verify end-to-end before moving on.
 16. **Playwright E2E suite** for the desktop renderer (activation, billing flow, tier gating)
     and the web apps (portal lookup, booking) — the flows are currently verified manually.
 17. **Error tracking** (e.g. Sentry free tier) in all three apps — today field errors are invisible.
-18. **Vendor-action audit log** in the admin panel (who extended/revoked what, when) —
+18. **Vendor-action audit log (DONE)** in the admin panel (who extended/revoked what, when) —
     store as `admin-audit` blob docs, surface on a page.
 19. **Rate limiting / abuse protection** on public endpoints (`/api/heartbeat`, `/api/bookings`
     POST, portal lookups) — e.g. Upstash ratelimit or simple per-IP counters in blob.

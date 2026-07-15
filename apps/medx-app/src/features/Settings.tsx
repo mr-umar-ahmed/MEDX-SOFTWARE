@@ -112,6 +112,54 @@ export default function Settings() {
         </div>
 
         <div className="card card-pad" style={{ maxWidth: 720, marginTop: 16 }}>
+          <h2>LAN Multi-Counter Sync</h2>
+          <div className="muted" style={{ fontSize: 13, marginBottom: 12 }}>
+            Link multiple PCs in your lab network together to share data in real-time. (Requires Pro or Enterprise license)
+          </div>
+          {(!activeLicense || activeLicense.tier === "Starter") ? (
+            <div style={{ padding: 12, background: "#fffbeb", border: "1px solid #fef3c7", borderRadius: 8, color: "#b45309", fontSize: 13 }}>
+              🔒 <b>Gated Feature:</b> LAN Multi-Counter is only available under <b>Pro</b> or <b>Enterprise</b> tiers. Please upgrade your license to enable this option.
+            </div>
+          ) : (
+            <div className="grid-2">
+              <div className="field" style={{ gridColumn: "1 / span 2" }}>
+                <label>Select Local Sync Role</label>
+                <select 
+                  className="input" 
+                  value={form.lanRole || "standalone"} 
+                  onChange={(e) => setForm({ ...form, lanRole: e.target.value as any })}
+                >
+                  <option value="standalone">Standalone (Single PC Mode)</option>
+                  <option value="host">Host Mode (This PC acts as the central lab database server)</option>
+                  <option value="client">Client Mode (This PC connects to a Host database server over LAN)</option>
+                </select>
+              </div>
+
+              {form.lanRole === "client" && (
+                <div className="field" style={{ gridColumn: "1 / span 2" }}>
+                  <label>Host PC IP Address</label>
+                  <input 
+                    className="input" 
+                    value={form.lanHostIp || ""} 
+                    onChange={(e) => setForm({ ...form, lanHostIp: e.target.value })} 
+                    placeholder="e.g. 192.168.1.10"
+                  />
+                  <div className="muted" style={{ fontSize: 11.5, marginTop: 4 }}>
+                    Enter the local IP address of the Host PC. Make sure both computers are connected to the same router network.
+                  </div>
+                </div>
+              )}
+
+              {form.lanRole === "host" && (
+                <div style={{ gridColumn: "1 / span 2", padding: 12, background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: 8, color: "#065f46", fontSize: 12.5 }}>
+                  📡 <b>Host Active:</b> Listening for client connections on Port <b>8095</b>. Share this computer's local IP address with your other counters to connect them.
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="card card-pad" style={{ maxWidth: 720, marginTop: 16 }}>
           <h2>System License</h2>
           {activeLicense ? (
             <div>
