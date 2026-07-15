@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedX Laboratory — Lab Software That Finally Works For You</title>
+<meta name="description" content="MedX is India's first offline-first pathology lab software with a QR patient portal. WhatsApp reports, 300+ built-in tests, GST billing. Join 512 labs on early access.">
+<meta property="og:title" content="MedX Laboratory — The Lab Software India's Diagnostics Deserves">
+<meta property="og:description" content="WhatsApp reports, QR patient portal, offline-first. Launching 2025. Join early access.">
+<meta property="og:image" content="">
+<meta name="theme-color" content="#1D4ED8">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔬</text></svg>">
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          display: ['"Plus Jakarta Sans"', 'sans-serif'],
+          serif: ['"DM Serif Display"', 'serif'],
+          body: ['Inter', 'sans-serif'],
+          mono: ['"Space Grotesk"', 'sans-serif'],
+        },
+        colors: {
+          ink:    '#0D1B2A',
+          brand:  '#1D4ED8',
+          vivid:  '#0EA5E9',
+          health: '#059669',
+          muted:  '#6B7280',
+          surface:'#F4F7FE',
+          glow:   'rgba(29,78,216,0.12)',
+        },
+        animation: {
+          'float':    'float 6s ease-in-out infinite',
+          'marquee':  'marquee 28s linear infinite',
+          'marquee2': 'marquee2 28s linear infinite',
+          'drift':    'drift 60s linear infinite',
+        },
+        keyframes: {
+          float:    { '0%,100%': {transform:'translateY(0px) rotate(-1deg)'}, '50%': {transform:'translateY(-18px) rotate(1deg)'} },
+          marquee:  { '0%': {transform:'translateX(0%)'}, '100%': {transform:'translateX(-50%)'} },
+          marquee2: { '0%': {transform:'translateX(50%)'}, '100%': {transform:'translateX(0%)'} },
+          drift:    { '0%': {transform:'translateX(0)'}, '100%': {transform:'translateX(-50%)'} },
+        }
+      }
+    }
+  }
+</script>
+
+<!-- Custom CSS -->
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-white">
+
+<!-- Scroll Progress Bar -->
+<div class="scroll-progress"></div>
+
+<!-- Custom Cursor -->
+<div class="cursor-dot"></div>
+<div class="cursor-glow"></div>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SECTION 0 · ANNOUNCEMENT BAR                   -->
+<!-- ════════════════════════════════════════════════ -->
+<!-- ════════════════════════════════════════════════ -->
+<!-- SECTION 0 · ANNOUNCEMENT BAR                   -->
+<!-- ════════════════════════════════════════════════ -->
+<div class="gradient-bg text-white text-center py-3 text-sm font-display font-semibold fixed top-0 left-0 right-0 z-50 overflow-hidden">
+  <span id="announce-text">🎁  SPECIAL OFFER: Get a 30-Day FREE Trial of MedX Pro/Enterprise! Download LIMS v0.2.0 and claim your key via WhatsApp.</span>
+  <a href="https://wa.me/917204060651?text=Hi!%20I%20want%20to%20claim%20my%2030-day%20free%20trial%20license%20key%20for%20MedX%20LIMS." target="_blank" class="underline ml-2 hover:text-white/90 transition">Claim Key Now →</a>
+</div>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SECTION 1 · NAVBAR                              -->
+<!-- ════════════════════════════════════════════════ -->
+<nav id="navbar" class="sticky top-[44px] z-40 transition-all duration-300">
+  <div class="max-w-7xl mx-auto px-6 flex items-center justify-between h-16">
+    <!-- Logo -->
+    <a href="#" class="flex items-center gap-2 group">
+      <div class="flex gap-0.5 flex-wrap w-[22px] h-[22px] group-hover:scale-110 transition-transform duration-300">
+        <div class="w-[10px] h-[10px] bg-brand rounded-sm"></div>
+        <div class="w-[10px] h-[10px] bg-vivid rounded-sm"></div>
+        <div class="w-[10px] h-[10px] bg-health rounded-sm"></div>
+        <div class="w-[10px] h-[10px] bg-brand/40 rounded-sm"></div>
+      </div>
+      <div class="flex flex-col leading-none">
+        <span class="font-display font-extrabold text-ink text-lg tracking-tight">MedX</span>
+        <span class="font-display font-medium text-brand text-[11px] -mt-0.5">Laboratory</span>
+      </div>
+    </a>
+
+    <!-- Center Nav (desktop) -->
+    <div class="hidden lg:flex items-center bg-surface px-6 py-2 rounded-full border border-gray-200">
+      <a href="#features" class="font-display font-medium text-[15px] text-muted hover:text-ink transition px-4 py-1">Features</a>
+      <a href="#how-it-works" class="font-display font-medium text-[15px] text-muted hover:text-ink transition px-4 py-1">How it Works</a>
+      <a href="#pricing" class="font-display font-medium text-[15px] text-muted hover:text-ink transition px-4 py-1">Pricing</a>
+      <a href="#for-labs" class="font-display font-medium text-[15px] text-muted hover:text-ink transition px-4 py-1">For Labs</a>
+    </div>
+
+    <!-- Right -->
+    <div class="hidden lg:flex items-center gap-3">
+      <a href="downloads/MedX-Setup-0.2.0.exe" download class="magnetic-btn shimmer-hover bg-brand text-white px-6 py-2.5 rounded-full font-display font-bold text-sm hover:bg-blue-700 transition-all duration-300 shadow-md">📥 Download Setup</a>
+      <a href="https://wa.me/917204060651?text=Hi!%20I%20just%20downloaded%20MedX%20LIMS.%20Please%20provide%20my%2030-day%20free%20trial%20license%20key." target="_blank" class="bg-[#25D366] text-white px-5 py-2.5 rounded-full font-display font-bold text-sm hover:bg-[#20bd5a] transition-all duration-300 shadow-md">💬 Free Trial</a>
+    </div>
+
+    <!-- Hamburger -->
+    <button id="menu-toggle" class="lg:hidden flex flex-col gap-1.5 p-2 min-w-[44px] min-h-[44px] items-center justify-center" aria-label="Menu">
+      <span class="block w-6 h-0.5 bg-ink"></span>
+      <span class="block w-6 h-0.5 bg-ink"></span>
+      <span class="block w-4 h-0.5 bg-ink"></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile Menu -->
+<div id="mobile-menu" class="mobile-menu fixed inset-0 z-[45] bg-white flex flex-col items-center justify-center gap-8">
+  <button id="menu-close" class="absolute top-6 right-6 p-2 min-w-[44px] min-h-[44px]" aria-label="Close">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0D1B2A" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  </button>
+  <a href="#features" class="menu-link font-display font-bold text-2xl text-ink hover:text-brand transition">Features</a>
+  <a href="#how-it-works" class="menu-link font-display font-bold text-2xl text-ink hover:text-brand transition">How it Works</a>
+  <a href="#pricing" class="menu-link font-display font-bold text-2xl text-ink hover:text-brand transition">Pricing</a>
+  <a href="#for-labs" class="menu-link font-display font-bold text-2xl text-ink hover:text-brand transition">For Labs</a>
+  <a href="downloads/MedX-Setup-0.2.0.exe" download class="menu-link bg-brand text-white px-10 py-4 rounded-full font-display font-bold text-lg mt-4 text-center">📥 Download Setup (104MB)</a>
+  <a href="https://wa.me/917204060651?text=Hi!%20I%20just%20downloaded%20MedX%20LIMS.%20Please%20provide%20my%2030-day%20free%20trial%20license%20key." target="_blank" class="menu-link bg-[#25D366] text-white px-10 py-4 rounded-full font-display font-bold text-lg text-center">💬 Claim 30-Day Free Trial</a>
+</div>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SECTION 2 · HERO                                -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="hero-section min-h-screen relative overflow-hidden bg-white flex flex-col items-center justify-center text-center px-6 pt-20 pb-16">
+
+  <!-- Lab Data Wallpaper -->
+  <div class="lab-wallpaper absolute inset-0 pointer-events-none opacity-[0.055] overflow-hidden select-none" aria-hidden="true">
+    <div class="lab-wallpaper-row font-mono text-[13px] text-ink mt-[10%]" style="animation-delay:0s">
+      <span>HbA1c · 7.2% · ↑HIGH · | · Platelet Count · 2.8 L/µL · NORMAL · | · TSH · 0.45 mIU/L · ✓ · | · CBC COMPLETE · WBC 9.4 · DIFF NORMAL · | · Creatinine · 0.9 mg/dL · ✓ · | · Bilirubin Total · 1.1 mg/dL · NORMAL · | · Vitamin D · 18 ng/mL · ↓LOW · | · LFT PANEL · SGPT 28 U/L · SGOT 32 U/L · ALP 76 U/L · | · Lipid Profile · LDL 142 mg/dL · ↑BORDERLINE · | · Urine R/M · Protein NIL · Glucose NIL · </span><span>HbA1c · 7.2% · ↑HIGH · | · Platelet Count · 2.8 L/µL · NORMAL · | · TSH · 0.45 mIU/L · ✓ · | · CBC COMPLETE · WBC 9.4 · DIFF NORMAL · | · Creatinine · 0.9 mg/dL · ✓ · | · Bilirubin Total · 1.1 mg/dL · NORMAL · | · Vitamin D · 18 ng/mL · ↓LOW · | · LFT PANEL · SGPT 28 U/L · SGOT 32 U/L · ALP 76 U/L · | · Lipid Profile · LDL 142 mg/dL · ↑BORDERLINE · | · Urine R/M · Protein NIL · Glucose NIL · </span><span>HbA1c · 7.2% · ↑HIGH · | · Platelet Count · 2.8 L/µL · NORMAL · | · TSH · 0.45 mIU/L · ✓ · | · CBC COMPLETE · WBC 9.4 · DIFF NORMAL · | · Creatinine · 0.9 mg/dL · ✓ · | · Bilirubin Total · 1.1 mg/dL · NORMAL · | · Vitamin D · 18 ng/mL · ↓LOW · | · LFT PANEL · SGPT 28 U/L · SGOT 32 U/L · ALP 76 U/L · | · Lipid Profile · LDL 142 mg/dL · ↑BORDERLINE · | · Urine R/M · Protein NIL · Glucose NIL · </span>
+    </div>
+    <div class="lab-wallpaper-row font-mono text-[13px] text-ink mt-[8%]" style="animation-delay:-20s">
+      <span>CBC COMPLETE · WBC 9.4 · DIFF NORMAL · | · Creatinine · 0.9 mg/dL · ✓ · | · HbA1c · 7.2% · ↑HIGH · | · Platelet Count · 2.8 L/µL · NORMAL · | · TSH · 0.45 mIU/L · ✓ · | · Bilirubin Total · 1.1 mg/dL · NORMAL · | · Vitamin D · 18 ng/mL · ↓LOW · | · LFT PANEL · SGPT 28 U/L · SGOT 32 U/L · ALP 76 U/L · | · Lipid Profile · LDL 142 mg/dL · ↑BORDERLINE · | · Urine R/M · Protein NIL · Glucose NIL · </span><span>CBC COMPLETE · WBC 9.4 · DIFF NORMAL · | · Creatinine · 0.9 mg/dL · ✓ · | · HbA1c · 7.2% · ↑HIGH · | · Platelet Count · 2.8 L/µL · NORMAL · | · TSH · 0.45 mIU/L · ✓ · | · Bilirubin Total · 1.1 mg/dL · NORMAL · | · Vitamin D · 18 ng/mL · ↓LOW · | · LFT PANEL · SGPT 28 U/L · SGOT 32 U/L · ALP 76 U/L · | · Lipid Profile · LDL 142 mg/dL · ↑BORDERLINE · | · Urine R/M · Protein NIL · Glucose NIL · </span><span>CBC COMPLETE · WBC 9.4 · DIFF NORMAL · | · Creatinine · 0.9 mg/dL · ✓ · | · HbA1c · 7.2% · ↑HIGH · | · Platelet Count · 2.8 L/µL · NORMAL · | · TSH · 0.45 mIU/L · ✓ · | · Bilirubin Total · 1.1 mg/dL · NORMAL · | · Vitamin D · 18 ng/mL · ↓LOW · | · LFT PANEL · SGPT 28 U/L · SGOT 32 U/L · ALP 76 U/L · | · Lipid Profile · LDL 142 mg/dL · ↑BORDERLINE · | · Urine R/M · Protein NIL · Glucose NIL · </span>
+    </div>
+    <div class="lab-wallpaper-row font-mono text-[13px] text-ink mt-[8%]" style="animation-delay:-40s">
+      <span>Lipid Profile · LDL 142 mg/dL · ↑BORDERLINE · | · Urine R/M · Protein NIL · Glucose NIL · | · HbA1c · 7.2% · ↑HIGH · | · TSH · 0.45 mIU/L · ✓ · | · CBC COMPLETE · WBC 9.4 · DIFF NORMAL · | · Creatinine · 0.9 mg/dL · ✓ · | · Bilirubin Total · 1.1 mg/dL · NORMAL · | · Vitamin D · 18 ng/mL · ↓LOW · | · LFT PANEL · SGPT 28 U/L · SGOT 32 U/L · ALP 76 U/L · | · Platelet Count · 2.8 L/µL · NORMAL · </span><span>Lipid Profile · LDL 142 mg/dL · ↑BORDERLINE · | · Urine R/M · Protein NIL · Glucose NIL · | · HbA1c · 7.2% · ↑HIGH · | · TSH · 0.45 mIU/L · ✓ · | · CBC COMPLETE · WBC 9.4 · DIFF NORMAL · | · Creatinine · 0.9 mg/dL · ✓ · | · Bilirubin Total · 1.1 mg/dL · NORMAL · | · Vitamin D · 18 ng/mL · ↓LOW · | · LFT PANEL · SGPT 28 U/L · SGOT 32 U/L · ALP 76 U/L · | · Platelet Count · 2.8 L/µL · NORMAL · </span><span>Lipid Profile · LDL 142 mg/dL · ↑BORDERLINE · | · Urine R/M · Protein NIL · Glucose NIL · | · HbA1c · 7.2% · ↑HIGH · | · TSH · 0.45 mIU/L · ✓ · | · CBC COMPLETE · WBC 9.4 · DIFF NORMAL · | · Creatinine · 0.9 mg/dL · ✓ · | · Bilirubin Total · 1.1 mg/dL · NORMAL · | · Vitamin D · 18 ng/mL · ↓LOW · | · LFT PANEL · SGPT 28 U/L · SGOT 32 U/L · ALP 76 U/L · | · Platelet Count · 2.8 L/µL · NORMAL · </span>
+    </div>
+  </div>
+
+  <!-- Badge -->
+  <div class="hero-badge relative z-10 bg-surface border border-brand/20 text-brand rounded-full px-5 py-2 text-sm font-display font-semibold inline-flex items-center gap-2 mb-8">
+    <span class="pulse-dot inline-block w-2 h-2 rounded-full bg-brand"></span>
+    🎁 30-Day Free Trial Offered + 3,000+ Tests Pre-loaded!
+  </div>
+
+  <!-- Headline -->
+  <h1 class="hero-headline relative z-10 font-display font-extrabold leading-[1.05]" style="font-size:clamp(44px,10vw,96px)">
+    <span class="word inline-block">Run</span> <span class="word inline-block">Your</span> <span class="word inline-block">Lab</span><br>
+    <span class="word inline-block gradient-text">Like</span> <span class="word inline-block gradient-text">It's</span> <span class="word inline-block gradient-text">2026.</span>
+  </h1>
+
+  <!-- Sub -->
+  <p class="hero-sub relative z-10 font-serif italic text-muted max-w-2xl mx-auto mt-6" style="font-size:clamp(18px,2.5vw,28px); line-height:1.5">
+    MedX installs locally on your PC, runs without internet, automates NABL QC charts, and lets you send PDF reports via WhatsApp in one click.
+  </p>
+
+  <!-- Download & Trial CTAs -->
+  <div class="relative z-10 mt-10 flex flex-col sm:flex-row gap-4 justify-center items-center">
+    <a href="downloads/MedX-Setup-0.2.0.exe" download class="magnetic-btn shimmer-hover bg-brand text-white px-8 py-4 rounded-full font-display font-bold text-base hover:bg-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl inline-flex items-center gap-2 min-h-[44px]">
+      📥 Download MedX LIMS v0.2.0
+    </a>
+    <a href="https://wa.me/917204060651?text=Hi!%20I%20just%20downloaded%20MedX%20LIMS.%20Please%20provide%20my%2030-day%20free%20trial%20license%20key." target="_blank" class="bg-[#25D366] text-white px-8 py-4 rounded-full font-display font-bold text-base hover:bg-[#20bd5a] transition-all duration-300 shadow-lg hover:shadow-xl inline-flex items-center gap-2 min-h-[44px]">
+      💬 Request 30-Day Free Trial Key
+    </a>
+  </div>
+  <p class="text-muted text-sm font-body mt-4">Compatible with Windows 7, 8, 10 & 11 · 15-Minute Guided Setup · Offline-First Architecture</p>
+  <!-- Hero Mockup -->
+  <div class="hero-mockup relative mt-16 max-w-lg mx-auto w-full">
+    <div class="animate-float">
+      <div class="bg-white rounded-3xl mockup-glow border border-gray-100 p-5 sm:p-6 w-full max-w-[440px] mx-auto">
+        <!-- Header -->
+        <div class="flex justify-between items-start">
+          <div class="flex items-center gap-2">
+            <div class="w-[10px] h-[10px] bg-brand rounded-sm flex-shrink-0"></div>
+            <div>
+              <div class="font-display text-xs font-bold text-ink">MedX Laboratory</div>
+              <div class="text-[10px] text-muted">23 MG Road, Surat, Gujarat</div>
+            </div>
+          </div>
+          <div class="flex flex-col items-end gap-1">
+            <div class="grid grid-cols-6 gap-[1px] w-[28px] h-[28px] flex-shrink-0" aria-label="QR Code">
+              <div class="bg-brand rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div><div class="bg-white rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div>
+              <div class="bg-brand rounded-[1px]"></div><div class="bg-white rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div><div class="bg-white rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div>
+              <div class="bg-brand rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div><div class="bg-white rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div><div class="bg-white rounded-[1px]"></div>
+              <div class="bg-white rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div><div class="bg-white rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div>
+              <div class="bg-brand rounded-[1px]"></div><div class="bg-white rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div><div class="bg-white rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div>
+              <div class="bg-brand rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div><div class="bg-white rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div>
+            </div>
+            <span class="text-[9px] text-muted">Scan for history</span>
+          </div>
+        </div>
+        <div class="h-px bg-gray-100 my-3"></div>
+
+        <!-- Patient Info -->
+        <div class="grid grid-cols-2 gap-3 text-[10px]">
+          <div><span class="text-[9px] font-display font-semibold text-muted uppercase tracking-[0.12em]">Patient</span><div class="font-mono font-bold text-ink mt-0.5">Ravi Kumar, 45M</div></div>
+          <div><span class="text-[9px] font-display font-semibold text-muted uppercase tracking-[0.12em]">Date</span><div class="font-mono font-bold text-ink mt-0.5">28 Jun 2025</div></div>
+          <div><span class="text-[9px] font-display font-semibold text-muted uppercase tracking-[0.12em]">Order</span><div class="font-mono font-bold text-ink mt-0.5">MX-2025-04821</div></div>
+          <div><span class="text-[9px] font-display font-semibold text-muted uppercase tracking-[0.12em]">Ref. Doctor</span><div class="font-mono font-bold text-ink mt-0.5">Dr. Sharma</div></div>
+        </div>
+
+        <!-- Test Results -->
+        <div class="mt-3">
+          <div class="bg-surface rounded-lg px-3 py-2 grid grid-cols-4 gap-2">
+            <span class="text-[10px] font-mono font-bold text-muted uppercase">Test</span>
+            <span class="text-[10px] font-mono font-bold text-muted uppercase">Result</span>
+            <span class="text-[10px] font-mono font-bold text-muted uppercase hidden sm:block">Range</span>
+            <span class="text-[10px] font-mono font-bold text-muted uppercase text-right">Status</span>
+          </div>
+          <div class="px-3 py-2 grid grid-cols-4 gap-2 items-center border-b border-gray-50">
+            <span class="text-[11px] font-mono text-ink">HbA1c</span><span class="text-[11px] font-mono font-bold text-ink">7.2%</span><span class="text-[11px] font-mono text-muted hidden sm:block">4.0–5.6%</span><span class="text-right"><span class="text-[9px] font-mono font-bold bg-red-50 text-red-600 rounded-full px-2 py-0.5">HIGH</span></span>
+          </div>
+          <div class="px-3 py-2 grid grid-cols-4 gap-2 items-center border-b border-gray-50 bg-gray-50/50">
+            <span class="text-[11px] font-mono text-ink">Haemoglobin</span><span class="text-[11px] font-mono font-bold text-ink">13.8 g/dL</span><span class="text-[11px] font-mono text-muted hidden sm:block">13.0–17.0</span><span class="text-right"><span class="text-[9px] font-mono font-bold bg-emerald-50 text-emerald-700 rounded-full px-2 py-0.5">NORMAL</span></span>
+          </div>
+          <div class="px-3 py-2 grid grid-cols-4 gap-2 items-center border-b border-gray-50">
+            <span class="text-[11px] font-mono text-ink">Creatinine</span><span class="text-[11px] font-mono font-bold text-ink">0.9 mg/dL</span><span class="text-[11px] font-mono text-muted hidden sm:block">0.7–1.3</span><span class="text-right"><span class="text-[9px] font-mono font-bold bg-emerald-50 text-emerald-700 rounded-full px-2 py-0.5">NORMAL</span></span>
+          </div>
+          <div class="px-3 py-2 grid grid-cols-4 gap-2 items-center border-b border-gray-50 bg-gray-50/50">
+            <span class="text-[11px] font-mono text-ink">TSH</span><span class="text-[11px] font-mono font-bold text-ink">0.45 mIU/L</span><span class="text-[11px] font-mono text-muted hidden sm:block">0.4–4.0</span><span class="text-right"><span class="text-[9px] font-mono font-bold bg-emerald-50 text-emerald-700 rounded-full px-2 py-0.5">NORMAL</span></span>
+          </div>
+          <div class="px-3 py-2 grid grid-cols-4 gap-2 items-center" style="filter:blur(3px);opacity:.5">
+            <span class="text-[11px] font-mono text-ink">Vitamin D</span><span class="text-[11px] font-mono font-bold text-ink">18 ng/mL</span><span class="text-[11px] font-mono text-muted hidden sm:block">30–100</span><span class="text-right"><span class="text-[9px] font-mono font-bold bg-amber-50 text-amber-600 rounded-full px-2 py-0.5">LOW</span></span>
+          </div>
+        </div>
+
+        <!-- Bottom -->
+        <div class="mt-3 flex justify-between items-center">
+          <div><div class="text-[9px] text-muted">Pathologist: Dr. Priya Iyer MD</div><div class="w-20 h-px bg-ink/20 mt-1"></div></div>
+          <button class="bg-[#25D366] text-white text-[10px] font-display font-bold rounded-full px-3 py-1.5 flex items-center gap-1 hover:bg-[#20bd5a] transition">▶ Send WhatsApp</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating Badges -->
+    <div class="hidden sm:flex absolute -top-4 -right-4 md:-right-8 bg-white rounded-2xl shadow-lg border border-gray-100 px-4 py-3 items-center gap-3 z-10 animate-float" style="animation-delay:1s">
+      <span class="text-xs font-display font-semibold text-ink">✅ Report delivered</span>
+      <span class="text-[11px] text-muted">via WhatsApp · 2s ago</span>
+    </div>
+    <div class="hidden sm:flex absolute -bottom-4 -left-4 md:-left-8 bg-white rounded-2xl shadow-lg border border-gray-100 px-4 py-3 items-center gap-3 z-10 animate-float" style="animation-delay:2s">
+      <span class="text-xs font-display font-semibold text-ink">📱 Patient scanned QR</span>
+      <span class="text-[11px] text-muted">Viewing 6 past reports</span>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SECTION 3 · MARQUEE                             -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="bg-ink py-4 overflow-hidden section-morph">
+  <div class="flex items-center whitespace-nowrap animate-marquee">
+    <span class="font-mono text-sm text-white/70">Patient Portal</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">WhatsApp Reports</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">300+ Tests</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">Offline First</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">GST Billing</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">QR Reports</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">Sample Tracking</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">CBC · LFT · KFT · Thyroid</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">Role-Based Access</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">MIS Reports</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">Doctor Commission</span><span class="text-brand mx-4">✦</span>
+    <span class="font-mono text-sm text-white/70">Patient Portal</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">WhatsApp Reports</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">300+ Tests</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">Offline First</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">GST Billing</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">QR Reports</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">Sample Tracking</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">CBC · LFT · KFT · Thyroid</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">Role-Based Access</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">MIS Reports</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">Doctor Commission</span><span class="text-brand mx-4">✦</span>
+  </div>
+  <div class="flex items-center whitespace-nowrap animate-marquee2 mt-3">
+    <span class="font-mono text-sm text-white/70">Windows 7 to 11</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">Home Collection</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">Barcode Labels</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">Email Delivery</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">PDF Reports</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">Multi-Branch</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">Reagent Tracking</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">NABL Format</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">Critical Alerts</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">Appointment Booking</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">One-Click Delivery</span><span class="text-brand mx-4">✦</span>
+    <span class="font-mono text-sm text-white/70">Windows 7 to 11</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">Home Collection</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">Barcode Labels</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">Email Delivery</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">PDF Reports</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">Multi-Branch</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">Reagent Tracking</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">NABL Format</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">Critical Alerts</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">Appointment Booking</span><span class="text-brand mx-4">✦</span><span class="font-mono text-sm text-white/70">One-Click Delivery</span><span class="text-brand mx-4">✦</span>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SECTION 4 · PROBLEM                             -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="bg-white py-24 md:py-32 px-6">
+  <div class="max-w-7xl mx-auto">
+    <span class="reveal text-[13px] font-display font-semibold tracking-[0.12em] uppercase text-brand">The Problem</span>
+    <h2 class="reveal font-display font-extrabold text-ink mt-3 max-w-3xl" style="font-size:clamp(36px,5vw,60px);line-height:1.1">Your patients deserve better than paper slips and missed calls.</h2>
+    <p class="reveal font-body text-muted max-w-2xl mt-6 text-lg leading-relaxed">Most labs in India still run on software that hasn't changed since 2008. Reports pile up at counters. Patients chase WhatsApp messages. Referral commissions are tracked on paper. Sound familiar?</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16">
+      <div class="pain-card tilt-card card-spotlight bg-surface border border-gray-200 rounded-2xl p-8 hover:card-hover-shadow hover:-translate-y-1 transition-all duration-300 reveal relative overflow-hidden" style="background:linear-gradient(135deg,rgba(29,78,216,0.03) 0%,transparent 50%)">
+        <div class="text-4xl mb-4">📋</div>
+        <h3 class="font-display font-bold text-xl text-ink">Reports stuck at the counter</h3>
+        <p class="text-muted text-base mt-3 font-body leading-relaxed">Patients wait hours, then have to physically come back to collect a piece of paper. Every day, your lab is the reason someone misses work.</p>
+      </div>
+      <div class="pain-card tilt-card card-spotlight bg-surface border border-gray-200 rounded-2xl p-8 hover:card-hover-shadow hover:-translate-y-1 transition-all duration-300 reveal relative overflow-hidden" style="background:linear-gradient(135deg,rgba(14,165,233,0.03) 0%,transparent 50%)">
+        <div class="text-4xl mb-4">📞</div>
+        <h3 class="font-display font-bold text-xl text-ink">Doctors calling for results</h3>
+        <p class="text-muted text-base mt-3 font-body leading-relaxed">Referring doctors call your receptionist 5 times a day asking for status updates instead of trusting your lab to deliver.</p>
+      </div>
+      <div class="pain-card tilt-card card-spotlight bg-surface border border-gray-200 rounded-2xl p-8 hover:card-hover-shadow hover:-translate-y-1 transition-all duration-300 reveal relative overflow-hidden" style="background:linear-gradient(135deg,rgba(5,150,105,0.03) 0%,transparent 50%)">
+        <div class="text-4xl mb-4">📝</div>
+        <h3 class="font-display font-bold text-xl text-ink">Commission calculated manually</h3>
+        <p class="text-muted text-base mt-3 font-body leading-relaxed">Every month-end, someone is cross-checking referrals by hand. Errors happen. Doctors notice. Trust erodes.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SECTION 5 · FEATURES (How It Works style)       -->
+<!-- ════════════════════════════════════════════════ -->
+<section id="features" class="bg-surface py-24 md:py-32 px-6 overflow-hidden">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center max-w-3xl mx-auto">
+      <span class="reveal text-[13px] font-display font-semibold tracking-[0.12em] uppercase text-health">The Solution</span>
+      <h2 class="reveal font-display font-extrabold text-ink mt-3" style="font-size:clamp(36px,5vw,60px);line-height:1.1">Everything your lab needs.<br>Nothing it doesn't.</h2>
+      <p class="reveal text-muted text-lg mt-5 font-body leading-relaxed">MedX handles the full patient journey — from registration to WhatsApp delivery — with a patient portal that turns a QR code into a relationship.</p>
+    </div>
+
+    <!-- ── Feature 1 — QR Portal (Star feature) ── -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center mt-24">
+      <div class="reveal">
+        <div class="flex items-center gap-3 mb-5">
+          <span class="bg-brand text-white font-mono font-bold text-sm rounded-full w-10 h-10 flex items-center justify-center flex-shrink-0">01</span>
+          <span class="bg-brand text-white text-[11px] px-3 py-1 font-display font-semibold rounded-full">Most Loved Feature</span>
+        </div>
+        <h3 class="font-display font-extrabold text-ink" style="font-size:clamp(24px,3vw,36px);line-height:1.15">Patient Portal via QR Code</h3>
+        <p class="text-muted text-base mt-4 font-body leading-relaxed max-w-md">Every report carries a unique QR code. When a patient scans it, they land on their personal portal — all past reports, trend graphs for repeat tests, and an option to book their next appointment. No app. No login. Just scan.</p>
+        <div class="flex flex-wrap gap-2 mt-6">
+          <span class="bg-white border border-gray-200 text-ink text-xs font-display font-semibold px-3 py-1.5 rounded-full">📊 Trend Graphs</span>
+          <span class="bg-white border border-gray-200 text-ink text-xs font-display font-semibold px-3 py-1.5 rounded-full">📁 Report History</span>
+          <span class="bg-white border border-gray-200 text-ink text-xs font-display font-semibold px-3 py-1.5 rounded-full">📅 Booking</span>
+          <span class="bg-white border border-gray-200 text-ink text-xs font-display font-semibold px-3 py-1.5 rounded-full">🌐 Multi-Language</span>
+        </div>
+      </div>
+      <!-- Mini illustration: QR scan to portal -->
+      <div class="reveal flex justify-center">
+        <div class="relative w-full max-w-[360px]">
+          <!-- Report with QR -->
+          <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-5 w-[200px]">
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-2 h-2 bg-brand rounded-sm"></div>
+              <span class="font-display text-[10px] font-bold text-ink">MedX Report</span>
+            </div>
+            <div class="space-y-1.5">
+              <div class="h-1.5 bg-gray-100 rounded-full w-full"></div>
+              <div class="h-1.5 bg-gray-100 rounded-full w-3/4"></div>
+              <div class="h-1.5 bg-gray-100 rounded-full w-5/6"></div>
+            </div>
+            <div class="mt-3 flex items-end justify-between">
+              <div class="space-y-1">
+                <div class="h-1.5 bg-gray-100 rounded-full w-16"></div>
+                <div class="h-1.5 bg-gray-100 rounded-full w-12"></div>
+              </div>
+              <div class="grid grid-cols-5 gap-[1.5px] w-[30px] h-[30px] flex-shrink-0">
+                <div class="bg-brand rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div><div class="bg-white rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div>
+                <div class="bg-brand rounded-[1px]"></div><div class="bg-white rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div><div class="bg-white rounded-[1px]"></div>
+                <div class="bg-brand rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div><div class="bg-white rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div>
+                <div class="bg-white rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div><div class="bg-white rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div>
+                <div class="bg-brand rounded-[1px]"></div><div class="bg-white rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div><div class="bg-brand rounded-[1px]"></div>
+              </div>
+            </div>
+          </div>
+          <!-- Arrow connecting -->
+          <div class="absolute top-1/2 left-[200px] -translate-y-1/2 w-[40px] flex items-center justify-center">
+            <svg width="40" height="20" viewBox="0 0 40 20" fill="none"><path d="M0 10H32M32 10L24 3M32 10L24 17" stroke="#1D4ED8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <!-- Phone portal -->
+          <div class="absolute top-1/2 -translate-y-1/2 right-0 w-[130px] bg-ink rounded-[20px] p-2 shadow-xl" style="box-shadow:0 0 40px rgba(29,78,216,0.2)">
+            <div class="bg-white rounded-[14px] overflow-hidden">
+              <div class="bg-gradient-to-r from-brand to-vivid px-2.5 py-2">
+                <div class="text-white font-display font-bold text-[8px]">MedX Portal</div>
+                <div class="text-white/80 text-[7px] font-body mt-0.5">Ravi Kumar</div>
+              </div>
+              <div class="px-2 py-2 space-y-1.5">
+                <div class="bg-surface rounded-lg px-2 py-1.5 flex justify-between items-center">
+                  <span class="text-[7px] font-display font-bold text-ink">HbA1c</span>
+                  <span class="text-[7px] text-brand font-bold">↓</span>
+                </div>
+                <div class="bg-surface rounded-lg px-2 py-1.5 flex justify-between items-center">
+                  <span class="text-[7px] font-display font-bold text-ink">Lipid Profile</span>
+                  <span class="text-[7px] text-brand font-bold">↓</span>
+                </div>
+                <div class="bg-surface rounded-lg px-2 py-1.5 flex justify-between items-center">
+                  <span class="text-[7px] font-display font-bold text-ink">CBC</span>
+                  <span class="text-[7px] text-brand font-bold">↓</span>
+                </div>
+                <div class="bg-brand text-white text-[7px] font-display font-bold rounded-lg py-1.5 text-center mt-1">Book Test →</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Feature 2 — WhatsApp Delivery ── -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center mt-28">
+      <!-- Illustration (left on desktop) -->
+      <div class="reveal flex justify-center order-2 lg:order-1">
+        <div class="relative w-full max-w-[320px]">
+          <!-- WhatsApp message bubbles -->
+          <div class="space-y-3">
+            <div class="flex items-start gap-3">
+              <div class="w-8 h-8 bg-[#25D366] rounded-full flex items-center justify-center flex-shrink-0 text-white text-xs font-bold">M</div>
+              <div class="bg-white rounded-2xl rounded-tl-md shadow-md border border-gray-100 px-4 py-3 max-w-[240px]">
+                <div class="text-[10px] font-display font-bold text-[#25D366]">MedX Laboratory</div>
+                <div class="text-[11px] text-ink font-body mt-1 leading-relaxed">Hi Ravi! Your test results are ready. Tap below to view your report.</div>
+                <div class="mt-2 bg-surface rounded-xl px-3 py-2">
+                  <div class="text-[9px] font-mono font-bold text-muted uppercase">Report Ready</div>
+                  <div class="text-[11px] font-display font-bold text-ink mt-0.5">HbA1c Panel + CBC Complete</div>
+                  <div class="text-[9px] text-brand font-bold mt-1">📄 View PDF →</div>
+                </div>
+                <div class="text-[8px] text-muted text-right mt-1">10:42 AM ✓✓</div>
+              </div>
+            </div>
+            <div class="flex items-start gap-3 justify-end">
+              <div class="bg-[#DCF8C6] rounded-2xl rounded-tr-md shadow-sm px-4 py-2.5 max-w-[180px]">
+                <div class="text-[11px] text-ink font-body">Thank you! Got it 🙏</div>
+                <div class="text-[8px] text-muted text-right mt-1">10:43 AM ✓✓</div>
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <div class="w-8 h-8 bg-[#25D366] rounded-full flex items-center justify-center flex-shrink-0 text-white text-xs font-bold">M</div>
+              <div class="bg-white rounded-2xl rounded-tl-md shadow-md border border-gray-100 px-4 py-2.5 max-w-[200px]">
+                <div class="text-[11px] text-ink font-body">📧 Email copy also sent to ravi@email.com</div>
+                <div class="text-[8px] text-muted text-right mt-1">10:42 AM ✓✓</div>
+              </div>
+            </div>
+          </div>
+          <!-- Floating badge -->
+          <div class="absolute -top-3 -right-3 bg-white rounded-xl shadow-lg border border-gray-100 px-3 py-2 animate-float" style="animation-delay:1s">
+            <div class="text-[10px] font-display font-semibold text-ink">⚡ Delivered in 2 seconds</div>
+          </div>
+        </div>
+      </div>
+      <!-- Text (right on desktop) -->
+      <div class="reveal order-1 lg:order-2">
+        <div class="flex items-center gap-3 mb-5">
+          <span class="bg-[#25D366] text-white font-mono font-bold text-sm rounded-full w-10 h-10 flex items-center justify-center flex-shrink-0">02</span>
+        </div>
+        <h3 class="font-display font-extrabold text-ink" style="font-size:clamp(24px,3vw,36px);line-height:1.15">WhatsApp + Email in One Click</h3>
+        <p class="text-muted text-base mt-4 font-body leading-relaxed max-w-md">Reports go out the moment the pathologist verifies — via WhatsApp, email, and SMS simultaneously. No switching apps. No copy-pasting numbers. The patient gets their report before they leave the parking lot.</p>
+        <div class="flex flex-wrap gap-2 mt-6">
+          <span class="bg-white border border-gray-200 text-ink text-xs font-display font-semibold px-3 py-1.5 rounded-full">💬 WhatsApp</span>
+          <span class="bg-white border border-gray-200 text-ink text-xs font-display font-semibold px-3 py-1.5 rounded-full">📧 Email</span>
+          <span class="bg-white border border-gray-200 text-ink text-xs font-display font-semibold px-3 py-1.5 rounded-full">📱 SMS</span>
+          <span class="bg-white border border-gray-200 text-ink text-xs font-display font-semibold px-3 py-1.5 rounded-full">⚡ Instant</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Feature 3 — Offline First ── -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center mt-28">
+      <div class="reveal">
+        <div class="flex items-center gap-3 mb-5">
+          <span class="bg-vivid text-white font-mono font-bold text-sm rounded-full w-10 h-10 flex items-center justify-center flex-shrink-0">03</span>
+        </div>
+        <h3 class="font-display font-extrabold text-ink" style="font-size:clamp(24px,3vw,36px);line-height:1.15">Offline First, Always</h3>
+        <p class="text-muted text-base mt-4 font-body leading-relaxed max-w-md">MedX installs on your lab's Windows PC and works completely offline. When internet returns, it silently syncs. Power cuts, BSNL outages, Jio resets — nothing stops your lab.</p>
+        <div class="flex flex-wrap gap-2 mt-6">
+          <span class="bg-white border border-gray-200 text-ink text-xs font-display font-semibold px-3 py-1.5 rounded-full">🖥️ Windows 7–11</span>
+          <span class="bg-white border border-gray-200 text-ink text-xs font-display font-semibold px-3 py-1.5 rounded-full">🔄 Auto-Sync</span>
+          <span class="bg-white border border-gray-200 text-ink text-xs font-display font-semibold px-3 py-1.5 rounded-full">⚡ Zero Downtime</span>
+        </div>
+      </div>
+      <!-- Illustration: offline/online status -->
+      <div class="reveal flex justify-center">
+        <div class="relative w-full max-w-[320px]">
+          <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-5">
+            <div class="flex items-center justify-between mb-4">
+              <div class="font-display text-xs font-bold text-ink">MedX Desktop</div>
+              <div class="flex items-center gap-1.5">
+                <div class="w-2 h-2 rounded-full bg-health animate-pulse"></div>
+                <span class="text-[10px] font-mono font-bold text-health">RUNNING</span>
+              </div>
+            </div>
+            <!-- Simulated status bars -->
+            <div class="space-y-3">
+              <div class="bg-surface rounded-xl p-3">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-[10px] font-display font-semibold text-ink">Internet Status</span>
+                  <span class="text-[9px] font-mono font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full">OFFLINE</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0119 12.55"/><path d="M5 12.55a10.94 10.94 0 015.17-2.39"/></svg>
+                  <span class="text-[9px] text-muted font-body">No internet since 2:30 PM</span>
+                </div>
+              </div>
+                                <span class="text-[10px] font-display font-semibold text-ink">Lab Operations</span>
+                  <span class="text-[9px] font-mono font-bold text-health bg-emerald-50 px-2 py-0.5 rounded-full">ALL GOOD</span>
+                </div>
+                <div class="space-y-1.5">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[9px] text-muted font-body">Reports generated</span>
+                    <span class="text-[10px] font-mono font-bold text-ink">24</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-[9px] text-muted font-body">Pending sync</span>
+                    <span class="text-[10px] font-mono font-bold text-vivid">3 reports</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-[9px] text-muted font-body">Patients registered</span>
+                    <span class="text-[10px] font-mono font-bold text-ink">18</span>
+                  </div>
+                </div>
+              </div>
+              <div class="bg-emerald-50 rounded-xl p-3 border border-emerald-100">
+                <div class="flex items-center gap-2">
+                  <span class="text-health text-sm">✓</span>
+                  <span class="text-[10px] font-display font-semibold text-health">Everything works. Internet is optional.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Feature 4 — 3,000+ Tests ── -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center mt-28">
+      <!-- Illustration (left) -->
+      <div class="reveal flex justify-center order-2 lg:order-1">
+        <div class="relative w-full max-w-[320px]">
+          <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-5">
+            <div class="flex items-center justify-between mb-3">
+              <div class="font-display text-xs font-bold text-ink">Test Library</div>
+              <div class="bg-surface rounded-lg px-2.5 py-1 flex items-center gap-1.5">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <span class="text-[9px] text-muted font-body">Search tests…</span>
+              </div>
+            </div>
+            <div class="space-y-1.5">
+              <div class="bg-surface rounded-xl px-3 py-2.5 flex items-center justify-between hover:bg-brand/5 transition group">
+                <div><div class="text-[10px] font-display font-bold text-ink">Complete Blood Count (CBC)</div><div class="text-[8px] text-muted font-body mt-0.5">26 parameters · WBC, RBC, Platelets…</div></div>
+                <span class="text-[9px] font-mono font-bold text-health bg-emerald-50 px-2 py-0.5 rounded-full">Ready</span>
+              </div>
+              <div class="bg-surface rounded-xl px-3 py-2.5 flex items-center justify-between hover:bg-brand/5 transition">
+                <div><div class="text-[10px] font-display font-bold text-ink">Lipid Profile</div><div class="text-[8px] text-muted font-body mt-0.5">Total, HDL, LDL, Triglycerides, VLDL</div></div>
+                <span class="text-[9px] font-mono font-bold text-health bg-emerald-50 px-2 py-0.5 rounded-full">Ready</span>
+              </div>
+              <div class="bg-surface rounded-xl px-3 py-2.5 flex items-center justify-between hover:bg-brand/5 transition">
+                <div><div class="text-[10px] font-display font-bold text-ink">Thyroid Panel (T3, T4, TSH)</div><div class="text-[8px] text-muted font-body mt-0.5">Age & gender-specific ranges</div></div>
+                <span class="text-[9px] font-mono font-bold text-health bg-emerald-50 px-2 py-0.5 rounded-full">Ready</span>
+              </div>
+              <div class="bg-surface rounded-xl px-3 py-2.5 flex items-center justify-between hover:bg-brand/5 transition">
+                <div><div class="text-[10px] font-display font-bold text-ink">Liver Function Test (LFT)</div><div class="text-[8px] text-muted font-body mt-0.5">SGPT, SGOT, ALP, Bilirubin…</div></div>
+                <span class="text-[9px] font-mono font-bold text-health bg-emerald-50 px-2 py-0.5 rounded-full">Ready</span>
+              </div>
+              <div class="bg-surface rounded-xl px-3 py-2.5 flex items-center justify-between opacity-60" style="filter:blur(1.5px)">
+                <div><div class="text-[10px] font-display font-bold text-ink">Vitamin D (25-Hydroxy)</div><div class="text-[8px] text-muted font-body mt-0.5">Chemiluminescence immunoassay</div></div>
+                <span class="text-[9px] font-mono font-bold text-health bg-emerald-50 px-2 py-0.5 rounded-full">Ready</span>
+              </div>
+            </div>
+            <div class="text-center mt-3">
+              <span class="text-[10px] font-display font-semibold text-brand">+ 2,996 more tests →</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Text (right) -->
+      <div class="reveal order-1 lg:order-2">
+        <div class="flex items-center gap-3 mb-5">
+          <span class="bg-health text-white font-mono font-bold text-sm rounded-full w-10 h-10 flex items-center justify-center flex-shrink-0">04</span>
+        </div>
+        <h3 class="font-display font-extrabold text-ink" style="font-size:clamp(24px,3vw,36px);line-height:1.15">3,000+ Pathology Tests Pre-Loaded</h3>
+        <p class="text-muted text-base mt-4 font-body leading-relaxed max-w-md">Pathology, Hematology, Biochemistry, Immunology, and Hormones — every test parameter is already configured with age and gender-specific normal ranges. Generate your first report in 15 minutes.</p>
+        <div class="flex flex-wrap gap-2 mt-6">
+          <span class="bg-white border border-gray-200 text-ink text-xs font-display font-semibold px-3 py-1.5 rounded-full">🩸 Haematology</span>
+          <span class="bg-white border border-gray-200 text-ink text-xs font-display font-semibold px-3 py-1.5 rounded-full">🧬 Biochemistry</span>
+          <span class="bg-white border border-gray-200 text-ink text-xs font-display font-semibold px-3 py-1.5 rounded-full">🧪 Immunology</span>
+          <span class="bg-white border border-gray-200 text-ink text-xs font-display font-semibold px-3 py-1.5 rounded-full">🔬 Hormones</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Feature 5 — GST Billing ── -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center mt-28">
+      <div class="reveal">
+        <div class="flex items-center gap-3 mb-5">
+          <span class="bg-amber-500 text-white font-mono font-bold text-sm rounded-full w-10 h-10 flex items-center justify-center flex-shrink-0">05</span>
+        </div>
+        <h3 class="font-display font-extrabold text-ink" style="font-size:clamp(24px,3vw,36px);line-height:1.15">GST-Compliant Billing</h3>
+        <p class="text-muted text-base mt-4 font-body leading-relaxed max-w-md">CGST, SGST, IGST — MedX calculates the right tax based on state. HSN code 999316 auto-applied. Invoice numbering resets every financial year. Your CA will approve.</p>
+        <div class="flex flex-wrap gap-2 mt-6">
+          <span class="bg-white border border-gray-200 text-ink text-xs font-display font-semibold px-3 py-1.5 rounded-full">🧾 Auto HSN Code</span>
+          <span class="bg-white border border-gray-200 text-ink text-xs font-display font-semibold px-3 py-1.5 rounded-full">📊 GSTR-Ready</span>
+          <span class="bg-white border border-gray-200 text-ink text-xs font-display font-semibold px-3 py-1.5 rounded-full">🔢 Auto Numbering</span>
+        </div>
+      </div>
+      <!-- Illustration: Invoice mockup -->
+      <div class="reveal flex justify-center">
+        <div class="relative w-full max-w-[300px]">
+          <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-5">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <div class="font-display text-xs font-bold text-ink">Tax Invoice</div>
+                <div class="text-[9px] text-muted font-mono">#MX-INV-2025-0847</div>
+              </div>
+              <span class="text-[9px] font-mono font-bold text-health bg-emerald-50 px-2 py-0.5 rounded-full">GST Compliant</span>
+            </div>
+            <div class="h-px bg-gray-100 my-2"></div>
+            <div class="space-y-2">
+              <div class="flex justify-between text-[10px] font-body"><span class="text-muted">CBC Complete</span><span class="font-mono font-bold text-ink">₹450.00</span></div>
+              <div class="flex justify-between text-[10px] font-body"><span class="text-muted">Lipid Profile</span><span class="font-mono font-bold text-ink">₹600.00</span></div>
+              <div class="flex justify-between text-[10px] font-body"><span class="text-muted">HbA1c</span><span class="font-mono font-bold text-ink">₹500.00</span></div>
+            </div>
+            <div class="h-px bg-gray-100 my-2"></div>
+            <div class="space-y-1">
+              <div class="flex justify-between text-[9px] font-body"><span class="text-muted">Subtotal</span><span class="font-mono text-ink">₹1,550.00</span></div>
+              <div class="flex justify-between text-[9px] font-body"><span class="text-muted">CGST @ 9%</span><span class="font-mono text-ink">₹139.50</span></div>
+              <div class="flex justify-between text-[9px] font-body"><span class="text-muted">SGST @ 9%</span><span class="font-mono text-ink">₹139.50</span></div>
+              <div class="flex justify-between text-[9px] font-body text-muted"><span>HSN: 999316</span><span>SAC Applied</span></div>
+            </div>
+            <div class="h-px bg-gray-200 my-2"></div>
+            <div class="flex justify-between text-[11px] font-display font-bold"><span class="text-ink">Grand Total</span><span class="text-ink">₹1,829.00</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Feature 6 — MIS Reports ── -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center mt-28">
+      <!-- Illustration (left) -->
+      <div class="reveal flex justify-center order-2 lg:order-1">
+        <div class="relative w-full max-w-[340px]">
+          <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-5">
+            <div class="flex items-center justify-between mb-4">
+              <div class="font-display text-xs font-bold text-ink">Dashboard — Today</div>
+              <div class="text-[9px] font-mono text-muted">28 Jun 2025</div>
+            </div>
+            <!-- Mini stats row -->
+            <div class="grid grid-cols-3 gap-2 mb-4">
+              <div class="bg-surface rounded-xl p-2.5 text-center">
+                <div class="font-mono font-bold text-base text-brand">₹24.8K</div>
+                <div class="text-[8px] text-muted font-body mt-0.5">Collection</div>
+              </div>
+              <div class="bg-surface rounded-xl p-2.5 text-center">
+                <div class="font-mono font-bold text-base text-health">67</div>
+                <div class="text-[8px] text-muted font-body mt-0.5">Patients</div>
+              </div>
+              <div class="bg-surface rounded-xl p-2.5 text-center">
+                <div class="font-mono font-bold text-base text-vivid">142</div>
+                <div class="text-[8px] text-muted font-body mt-0.5">Tests</div>
+              </div>
+            </div>
+            <!-- Mini bar chart -->
+            <div class="bg-surface rounded-xl p-3">
+              <div class="text-[9px] font-mono font-bold text-muted mb-2">This Week's Revenue</div>
+              <div class="flex items-end gap-1.5 h-[50px]">
+                <div class="flex-1 bg-brand/20 rounded-t-sm" style="height:60%"></div>
+                <div class="flex-1 bg-brand/30 rounded-t-sm" style="height:75%"></div>
+                <div class="flex-1 bg-brand/40 rounded-t-sm" style="height:50%"></div>
+                <div class="flex-1 bg-brand/50 rounded-t-sm" style="height:90%"></div>
+                <div class="flex-1 bg-brand/60 rounded-t-sm" style="height:85%"></div>
+                <div class="flex-1 bg-brand rounded-t-sm" style="height:100%"></div>
+                <div class="flex-1 bg-brand/30 rounded-t-sm border-2 border-dashed border-brand/40" style="height:70%"></div>
+              </div>
+              <div class="flex justify-between mt-1.5">
+                <span class="text-[7px] text-muted font-mono">Mon</span>
+                <span class="text-[7px] text-muted font-mono">Tue</span>
+                <span class="text-[7px] text-muted font-mono">Wed</span>
+                <span class="text-[7px] text-muted font-mono">Thu</span>
+                <span class="text-[7px] text-muted font-mono">Fri</span>
+                <span class="text-[7px] text-muted font-mono font-bold text-brand">Sat</span>
+                <span class="text-[7px] text-muted font-mono">Sun</span>
+              </div>
+            </div>
+            <!-- Top doctors -->
+            <div class="mt-3">
+              <div class="text-[9px] font-mono font-bold text-muted mb-1.5">Top Referring Doctors</div>
+              <div class="space-y-1">
+                <div class="flex items-center justify-between text-[9px]"><span class="text-ink font-display font-semibold">Dr. R. Sharma</span><span class="font-mono text-brand font-bold">₹4,200</span></div>
+                <div class="flex items-center justify-between text-[9px]"><span class="text-ink font-display font-semibold">Dr. P. Mehta</span><span class="font-mono text-brand font-bold">₹3,800</span></div>
+                <div class="flex items-center justify-between text-[9px]"><span class="text-ink font-display font-semibold">Dr. S. Iyer</span><span class="font-mono text-brand font-bold">₹2,950</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Text (right) -->
+      <div class="reveal order-1 lg:order-2">
+        <div class="flex items-center gap-3 mb-5">
+          <span class="bg-purple-600 text-white font-mono font-bold text-sm rounded-full w-10 h-10 flex items-center justify-center flex-shrink-0">06</span>
+        </div>
+        <h3 class="font-display font-extrabold text-ink" style="font-size:clamp(24px,3vw,36px);line-height:1.15">MIS Reports That Actually Help</h3>
+        <p class="text-muted text-base mt-4 font-body leading-relaxed max-w-md">Daily collection totals, doctor-wise referral counts, test popularity, outstanding dues — all in one screen. No Excel exports needed. Your entire lab's pulse, at a glance.</p>
+        <div class="flex flex-wrap gap-2 mt-6">
+          <span class="bg-white border border-gray-200 text-ink text-xs font-display font-semibold px-3 py-1.5 rounded-full">📊 Revenue</span>
+          <span class="bg-white border border-gray-200 text-ink text-xs font-display font-semibold px-3 py-1.5 rounded-full">👨‍⚕️ Doctor-wise</span>
+          <span class="bg-white border border-gray-200 text-ink text-xs font-display font-semibold px-3 py-1.5 rounded-full">📈 Trends</span>
+          <span class="bg-white border border-gray-200 text-ink text-xs font-display font-semibold px-3 py-1.5 rounded-full">💰 Dues</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Feature 7 — NABL Quality Control ── -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center mt-28">
+      <div class="reveal">
+        <div class="flex items-center gap-3 mb-5">
+          <span class="bg-health text-white font-mono font-bold text-sm rounded-full w-10 h-10 flex items-center justify-center flex-shrink-0">07</span>
+          <span class="bg-emerald-100 text-health text-[11px] px-3 py-1 font-display font-semibold rounded-full">NABL Compliance</span>
+        </div>
+        <h3 class="font-display font-extrabold text-ink" style="font-size:clamp(24px,3vw,36px);line-height:1.15">NABL Quality Control (ISO 15189)</h3>
+        <p class="text-muted text-base mt-4 font-body leading-relaxed max-w-md">Log controls and generate interactive Levey-Jennings (LJ) charts instantly. The built-in Westgard rules engine automatically flags violations (1-3s, 2-2s, R-4s, 10x) in real time so you pass audits without spreadsheets.</p>
+        <div class="flex flex-wrap gap-2 mt-6">
+          <span class="bg-white border border-gray-200 text-ink text-xs font-display font-semibold px-3 py-1.5 rounded-full">📈 Levey-Jennings</span>
+          <span class="bg-white border border-gray-200 text-ink text-xs font-display font-semibold px-3 py-1.5 rounded-full">⚠️ Westgard Rules</span>
+          <span class="bg-white border border-gray-200 text-ink text-xs font-display font-semibold px-3 py-1.5 rounded-full">🧬 L1 / L2 / L3 Controls</span>
+        </div>
+      </div>
+      <!-- Illustration: LJ Chart mockup -->
+      <div class="reveal flex justify-center">
+        <div class="relative w-full max-w-[340px]">
+          <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-5">
+            <div class="flex items-center justify-between mb-3">
+              <span class="font-display text-xs font-bold text-ink">LJ Chart — Control L1</span>
+              <span class="text-[9px] font-mono font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-full">Rule Violations (1-3s)</span>
+            </div>
+            <!-- LJ Chart SVG Simulator -->
+            <div class="h-28 w-full bg-gray-50/50 rounded-xl p-2 relative">
+              <div class="h-[1px] bg-red-200 w-full absolute top-[10%] left-0"></div>
+              <div class="h-[1px] bg-yellow-200 w-full absolute top-[30%] left-0"></div>
+              <div class="h-[1px] bg-emerald-200 w-full absolute top-[50%] left-0 border-dashed"></div>
+              <div class="h-[1px] bg-yellow-200 w-full absolute top-[70%] left-0"></div>
+              <div class="h-[1px] bg-red-200 w-full absolute top-[90%] left-0"></div>
+              
+              <!-- Simulated QC Data Points and Polyline -->
+              <svg class="w-full h-full relative z-10" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <polyline points="5,50 15,48 25,68 35,52 45,55 55,32 65,30 75,72 85,92 95,50" fill="none" stroke="#1d4ed8" stroke-width="1.5"/>
+                <circle cx="5" cy="50" r="2.5" fill="#10b981"/>
+                <circle cx="15" cy="48" r="2.5" fill="#10b981"/>
+                <circle cx="25" cy="68" r="2.5" fill="#eab308"/>
+                <circle cx="35" cy="52" r="2.5" fill="#10b981"/>
+                <circle cx="45" cy="55" r="2.5" fill="#10b981"/>
+                <circle cx="55" cy="32" r="2.5" fill="#eab308"/>
+                <circle cx="65" cy="30" r="2.5" fill="#eab308"/>
+                <circle cx="75" cy="72" r="2.5" fill="#eab308"/>
+                <circle cx="85" cy="92" r="3.5" fill="#ef4444" stroke="#ffffff" stroke-width="1"/>
+                <circle cx="95" cy="50" r="2.5" fill="#10b981"/>
+              </svg>
+            </div>
+            <div class="flex justify-between text-[8px] font-mono text-muted mt-2">
+              <span>Run #1</span>
+              <span>Run #5</span>
+              <span>Run #9 (Violated)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Feature 8 — LAN Sync ── -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center mt-28">
+      <!-- Illustration (left) -->
+      <div class="reveal flex justify-center order-2 lg:order-1">
+        <div class="relative w-full max-w-[320px]">
+          <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-5">
+            <div class="font-display text-xs font-bold text-ink mb-3 text-center">Multi-Counter Replication</div>
+            <div class="flex justify-between items-center gap-2">
+              <div class="bg-surface rounded-xl p-2 text-center flex-1 border border-brand/20">
+                <div class="text-[9px] font-display font-extrabold text-brand">Host PC</div>
+                <div class="text-[7.5px] font-mono text-muted mt-1">IP: 192.168.1.12</div>
+                <div class="text-[8px] font-mono font-bold text-health mt-0.5">Listening: 8095</div>
+              </div>
+              <div class="text-brand font-bold text-lg animate-pulse">⇄</div>
+              <div class="bg-surface rounded-xl p-2 text-center flex-1">
+                <div class="text-[9px] font-display font-extrabold text-ink">Client PC 1</div>
+                <div class="text-[7.5px] font-mono text-muted mt-1">Reception Counter</div>
+                <div class="text-[8px] font-mono font-bold text-health mt-0.5">Connected ✓</div>
+              </div>
+            </div>
+            <div class="h-2"></div>
+            <div class="bg-emerald-50 text-emerald-800 rounded-lg p-2 text-[8px] font-mono text-center">
+              Replicating patient billing & test queues instantly.
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Text (right) -->
+      <div class="reveal order-1 lg:order-2">
+        <div class="flex items-center gap-3 mb-5">
+          <span class="bg-vivid text-white font-mono font-bold text-sm rounded-full w-10 h-10 flex items-center justify-center flex-shrink-0">08</span>
+        </div>
+        <h3 class="font-display font-extrabold text-ink" style="font-size:clamp(24px,3vw,36px);line-height:1.15">Multi-Counter LAN Sync</h3>
+        <p class="text-muted text-base mt-4 font-body leading-relaxed max-w-md">Connect multiple computers on your lab's local router network. One Host PC holds the master database, while Reception and Reporting PCs sync in real time over TCP sockets. Seamless multi-device workflow without cloud bills.</p>
+        <div class="flex flex-wrap gap-2 mt-6">
+          <span class="bg-white border border-gray-200 text-ink text-xs font-display font-semibold px-3 py-1.5 rounded-full">📡 Local TCP Port 8095</span>
+          <span class="bg-white border border-gray-200 text-ink text-xs font-display font-semibold px-3 py-1.5 rounded-full">🖥️ Client-Host Mode</span>
+          <span class="bg-white border border-gray-200 text-ink text-xs font-display font-semibold px-3 py-1.5 rounded-full">🔄 Live State Sharing</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SECTION 6 · QR PORTAL SPOTLIGHT                 -->
+<!-- ════════════════════════════════════════════════ -->
+<section id="how-it-works" class="bg-[#060E1D] py-24 md:py-32 px-6 overflow-hidden relative section-morph">
+  <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full pointer-events-none" style="background:radial-gradient(circle,rgba(29,78,216,0.18) 0%,transparent 70%)"></div>
+
+  <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center relative z-10">
+    <!-- Text -->
+    <div>
+      <span class="reveal text-[13px] font-display font-semibold tracking-[0.12em] uppercase text-vivid">QR Patient Portal</span>
+      <h2 class="reveal font-display font-extrabold text-white mt-4" style="font-size:clamp(36px,5vw,60px);line-height:1.1">Your patients<br>never have to ask<br><span class="gradient-text">'where's my report?'</span> again.</h2>
+      <p class="reveal text-white/60 text-lg max-w-md mt-6 font-body leading-relaxed">MedX prints a unique QR code on every report and invoice. The patient scans it from home, sees all their test history, watches trends across time, and books their next visit — all without calling your lab.</p>
+
+      <div class="mt-10 space-y-5">
+        <div class="reveal flex items-start gap-4"><div class="bg-brand/30 text-vivid font-mono font-bold text-sm rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">1</div><div><div class="text-white font-display font-semibold text-base">Report verified by pathologist</div><div class="text-white/50 text-sm mt-0.5 font-body">One click in MedX confirms the result and locks it.</div></div></div>
+        <div class="reveal flex items-start gap-4"><div class="bg-brand/30 text-vivid font-mono font-bold text-sm rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">2</div><div><div class="text-white font-display font-semibold text-base">QR is auto-embedded in PDF</div><div class="text-white/50 text-sm mt-0.5 font-body">Unique encrypted link generated — no manual work.</div></div></div>
+        <div class="reveal flex items-start gap-4"><div class="bg-brand/30 text-vivid font-mono font-bold text-sm rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">3</div><div><div class="text-white font-display font-semibold text-base">Patient scans the QR</div><div class="text-white/50 text-sm mt-0.5 font-body">Opens on their phone browser. No app download required.</div></div></div>
+        <div class="reveal flex items-start gap-4"><div class="bg-brand/30 text-vivid font-mono font-bold text-sm rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0">4</div><div><div class="text-white font-display font-semibold text-base">Patient sees everything</div><div class="text-white/50 text-sm mt-0.5 font-body">All reports, trends, and booking — in their language.</div></div></div>
+      </div>
+
+      <a href="#waitlist" class="reveal magnetic-btn shimmer-hover inline-block mt-10 border border-white/30 text-white px-8 py-4 rounded-full font-display font-bold hover:bg-white/10 transition-all duration-300 min-h-[44px]">See a Demo →</a>
+    </div>
+
+    <!-- Phone Mockup -->
+    <div class="relative flex justify-center reveal">
+      <div class="w-56 md:w-72 bg-[#0D1A2D] rounded-[40px] border-2 border-white/10 shadow-2xl p-4" style="box-shadow:0 0 80px rgba(29,78,216,0.35)">
+        <div class="bg-white rounded-[28px] overflow-hidden">
+          <div class="phone-notch mt-2"></div>
+          <div class="bg-white flex justify-between px-4 py-1 text-[8px] font-mono text-muted"><span>9:41 AM</span><span class="font-bold">MedX Portal</span><span>100%</span></div>
+          <div class="bg-gradient-to-r from-brand to-vivid px-4 py-4"><div class="text-white font-display font-bold text-xs">MedX</div><div class="text-white font-display font-extrabold text-base mt-1">Ravi Kumar</div><div class="text-white/70 text-[9px] font-body">Last visit: 28 Jun 2025 · 4 reports</div></div>
+          <div class="bg-white px-3 py-3 space-y-2">
+            <div class="text-[8px] font-mono font-bold text-muted uppercase tracking-widest">Your Reports</div>
+            <div class="bg-surface rounded-xl px-3 py-2.5 flex justify-between items-center hover:bg-brand/5 transition"><span class="text-[10px] font-display font-bold text-ink">HbA1c Panel</span><span class="text-[9px] text-muted">28 Jun</span><span class="text-[9px] text-brand font-bold">↓ PDF</span></div>
+            <div class="bg-surface rounded-xl px-3 py-2.5 flex justify-between items-center hover:bg-brand/5 transition"><span class="text-[10px] font-display font-bold text-ink">Lipid Profile</span><span class="text-[9px] text-muted">15 May</span><span class="text-[9px] text-brand font-bold">↓ PDF</span></div>
+            <div class="bg-surface rounded-xl px-3 py-2.5 flex justify-between items-center hover:bg-brand/5 transition"><span class="text-[10px] font-display font-bold text-ink">CBC Complete</span><span class="text-[9px] text-muted">02 Apr</span><span class="text-[9px] text-brand font-bold">↓ PDF</span></div>
+            <div class="bg-surface rounded-xl p-3 mt-2"><div class="text-[9px] font-mono font-bold text-muted mb-2">HbA1c Trend</div><div class="h-[30px]"><svg class="w-full h-full" viewBox="0 0 160 30" preserveAspectRatio="none"><defs><linearGradient id="tg" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#1D4ED8"/><stop offset="100%" stop-color="#059669"/></linearGradient></defs><polyline points="0,25 40,20 80,22 120,14 160,8" fill="none" stroke="url(#tg)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="0" cy="25" r="3" fill="#1D4ED8"/><circle cx="40" cy="20" r="3" fill="#1D4ED8"/><circle cx="80" cy="22" r="3" fill="#0EA5E9"/><circle cx="120" cy="14" r="3" fill="#0EA5E9"/><circle cx="160" cy="8" r="3" fill="#059669"/></svg></div></div>
+            <button class="w-full bg-brand text-white text-[10px] font-display font-bold rounded-xl py-2.5 text-center mt-2 hover:bg-blue-700 transition">Book a New Test →</button>
+          </div>
+        </div>
+      </div>
+      <div class="hidden sm:flex absolute -top-5 -right-4 md:-right-10 bg-white shadow-xl rounded-xl px-3 py-2 items-center gap-2 z-10 animate-float" style="animation-delay:2s"><span class="text-[10px] font-display font-semibold text-ink">📱 Scanned just now</span><span class="text-[9px] text-muted">3 new reports</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SECTION 7 · STATS                               -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="bg-surface py-20 px-6">
+  <div class="max-w-6xl mx-auto grid grid-cols-2 lg:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr] gap-y-8 items-center">
+    <div class="text-center reveal py-8">
+      <div class="font-mono font-bold gradient-text stat-number" style="font-size:clamp(36px,5vw,60px)" data-target="3000" data-suffix="+">0+</div>
+      <div class="text-[13px] font-display font-semibold tracking-[0.12em] uppercase text-muted mt-2">Diagnostic Tests Pre-Loaded</div>
+      <div class="text-sm text-muted/70 mt-1 font-body">From CBC to COVID Antigen</div>
+    </div>
+    <div class="hidden lg:block h-20 w-px bg-gray-200 self-center"></div>
+    <div class="text-center reveal py-8">
+      <div class="font-mono font-bold gradient-text stat-number" style="font-size:clamp(36px,5vw,60px)" data-target="512" data-suffix="">0</div>
+      <div class="text-[13px] font-display font-semibold tracking-[0.12em] uppercase text-muted mt-2">Labs on Early Access List</div>
+      <div class="text-sm text-muted/70 mt-1 font-body">Growing every day</div>
+    </div>
+    <div class="hidden lg:block h-20 w-px bg-gray-200 self-center"></div>
+    <div class="text-center reveal py-8">
+      <div class="font-mono font-bold gradient-text" style="font-size:clamp(36px,5vw,60px)">15 min</div>
+      <div class="text-[13px] font-display font-semibold tracking-[0.12em] uppercase text-muted mt-2">To Your First Report</div>
+      <div class="text-sm text-muted/70 mt-1 font-body">From install to delivery</div>
+    </div>
+    <div class="hidden lg:block h-20 w-px bg-gray-200 self-center"></div>
+    <div class="text-center reveal py-8">
+      <div class="font-mono font-bold gradient-text" style="font-size:clamp(36px,5vw,60px)">₹0</div>
+      <div class="text-[13px] font-display font-semibold tracking-[0.12em] uppercase text-muted mt-2">Setup Cost</div>
+      <div class="text-sm text-muted/70 mt-1 font-body">One-time license. No subscriptions for Starter.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SECTION 8 · WHO IT'S FOR                        -->
+<!-- ════════════════════════════════════════════════ -->
+<section id="for-labs" class="bg-white py-24 md:py-32 px-6">
+  <div class="max-w-7xl mx-auto">
+    <span class="reveal text-[13px] font-display font-semibold tracking-[0.12em] uppercase text-brand">Built For</span>
+    <h2 class="reveal font-display font-bold text-ink mt-3" style="font-size:clamp(28px,3.5vw,40px);line-height:1.2">MedX is designed for every lab that runs India's diagnostics.</h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+      <div class="tilt-card bg-surface border border-gray-100 rounded-2xl p-8 relative overflow-hidden reveal pricing-glow">
+        <div class="absolute top-0 right-0 w-[120px] h-[120px] rounded-full bg-brand/10 blur-xl pointer-events-none"></div>
+        <div class="text-4xl relative z-10">🔬</div>
+        <h3 class="font-display font-extrabold text-xl text-ink mt-4 relative z-10">Independent Pathology Labs</h3>
+        <p class="text-muted text-base mt-3 font-body leading-relaxed relative z-10">Single collection point, 1–3 staff. MedX handles registration to WhatsApp delivery with zero IT complexity. Works on any Windows PC.</p>
+        <span class="inline-block bg-brand/10 text-brand font-display font-semibold text-sm rounded-full px-3 py-1 mt-6 relative z-10">Starter Plan</span>
+      </div>
+      <div class="tilt-card bg-surface border border-gray-100 rounded-2xl p-8 relative overflow-hidden reveal pricing-glow">
+        <div class="absolute top-0 right-0 w-[120px] h-[120px] rounded-full bg-vivid/10 blur-xl pointer-events-none"></div>
+        <div class="text-4xl relative z-10">🏥</div>
+        <h3 class="font-display font-extrabold text-xl text-ink mt-4 relative z-10">Hospital-Attached Labs</h3>
+        <p class="text-muted text-base mt-3 font-body leading-relaxed relative z-10">Billing linked to wards, TPA insurance claims, multi-department test routing, and pathologist digital verification — all from one interface.</p>
+        <span class="inline-block bg-vivid/10 text-vivid font-display font-semibold text-sm rounded-full px-3 py-1 mt-6 relative z-10">Pro Plan</span>
+      </div>
+      <div class="tilt-card bg-surface border border-gray-100 rounded-2xl p-8 relative overflow-hidden reveal pricing-glow">
+        <div class="absolute top-0 right-0 w-[120px] h-[120px] rounded-full bg-health/10 blur-xl pointer-events-none"></div>
+        <div class="text-4xl relative z-10">🏙️</div>
+        <h3 class="font-display font-extrabold text-xl text-ink mt-4 relative z-10">Multi-Branch Chains</h3>
+        <p class="text-muted text-base mt-3 font-body leading-relaxed relative z-10">One dashboard across 5 cities. Consolidated MIS, inter-branch sample transfer, centralised doctor commission, and franchise-level reporting.</p>
+        <span class="inline-block bg-health/10 text-health font-display font-semibold text-sm rounded-full px-3 py-1 mt-6 relative z-10">Enterprise Plan</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SECTION 9 · PRICING                             -->
+<!-- ════════════════════════════════════════════════ -->
+<section id="pricing" class="bg-ink py-24 md:py-32 px-6 overflow-hidden section-morph">
+  <div class="max-w-5xl mx-auto text-center">
+    <span class="reveal text-[13px] font-display font-semibold tracking-[0.12em] uppercase text-vivid">Pricing</span>
+    <h2 class="reveal font-display font-extrabold text-white mt-3" style="font-size:clamp(36px,5vw,60px);line-height:1.1">3 Plans. One Goal.</h2>
+    <p class="reveal text-white/60 text-lg mt-4 max-w-xl mx-auto font-body">Transparent pricing. No hidden fees. Early access labs get 30% off for life — lock in your price today.</p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16 max-w-5xl mx-auto items-start">
+    <!-- Starter -->
+    <div class="pricing-card tilt-card bg-white/5 border border-white/10 rounded-3xl p-8 reveal pricing-glow">
+      <h3 class="font-display font-extrabold text-white text-xl">Starter</h3>
+      <div class="mt-4"><span class="font-mono font-bold text-4xl text-white">₹7,999</span><span class="text-muted line-through text-lg ml-2">₹11,427</span></div>
+      <div class="text-white/50 text-sm font-body mt-1">one-time license</div>
+      <p class="text-white/60 text-base mt-4 font-body">For single-location labs, 1 PC.</p>
+      <ul class="mt-6 space-y-3">
+        <li class="flex items-center gap-3 text-white/70 text-sm font-body"><span class="text-health">✓</span> All 15 core features</li>
+        <li class="flex items-center gap-3 text-white/70 text-sm font-body"><span class="text-health">✓</span> 3,000+ test library</li>
+        <li class="flex items-center gap-3 text-white/70 text-sm font-body"><span class="text-health">✓</span> WhatsApp + Email delivery</li>
+        <li class="flex items-center gap-3 text-white/70 text-sm font-body"><span class="text-health">✓</span> Patient QR portal (read-only)</li>
+        <li class="flex items-center gap-3 text-white/30 text-sm font-body">✗ Multi-branch</li>
+        <li class="flex items-center gap-3 text-white/30 text-sm font-body">✗ Cloud sync</li>
+      </ul>
+      <a href="https://wa.me/917204060651?text=Hello!%20I%20want%20to%20get%20a%20starter%20plan%20license%20key%20for%20MedX%20LIMS." target="_blank" class="magnetic-btn shimmer-hover block text-center mt-8 border border-white/30 text-white px-8 py-4 rounded-full font-display font-bold hover:bg-white/10 transition-all duration-300">Buy Starter Key</a>
+    </div>
+
+    <!-- Pro -->
+    <div class="pricing-card tilt-card bg-brand border-2 border-vivid rounded-3xl p-8 md:scale-105 reveal relative">
+      <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-vivid text-white font-mono text-[10px] uppercase tracking-wider px-3 py-1 rounded-full font-bold">Most Popular</span>
+      <h3 class="font-display font-extrabold text-white text-xl mt-2">Pro</h3>
+      <div class="mt-4"><span class="font-mono font-bold text-4xl text-white">₹14,999</span><span class="text-white/60 text-base ml-1">+ ₹499/mo</span></div>
+      <div class="text-white/50 text-sm font-body mt-1">30-day free trial first</div>
+      <p class="text-white/80 text-base mt-4 font-body">For growing labs, 2–5 PCs + LAN sync.</p>
+      <ul class="mt-6 space-y-3">
+        <li class="flex items-center gap-3 text-white/90 text-sm font-body"><span>✓</span> Everything in Starter</li>
+        <li class="flex items-center gap-3 text-white/90 text-sm font-body"><span>✓</span> Cloud sync &amp; backup</li>
+        <li class="flex items-center gap-3 text-white/90 text-sm font-body"><span>✓</span> Multi-Counter LAN Sync</li>
+        <li class="flex items-center gap-3 text-white/90 text-sm font-body"><span>✓</span> Doctor commission module</li>
+        <li class="flex items-center gap-3 text-white/90 text-sm font-body"><span>✓</span> Priority support</li>
+        <li class="flex items-center gap-3 text-white/90 text-sm font-body"><span>✓</span> Advanced MIS &amp; QC Charts</li>
+      </ul>
+      <a href="https://wa.me/917204060651?text=Hello!%20I%20want%20to%20start%20my%2030-day%20free%20trial%20for%20the%20MedX%20Pro%20plan." target="_blank" class="magnetic-btn shimmer-hover block text-center mt-8 bg-white text-brand px-8 py-4 rounded-full font-display font-bold hover:bg-gray-100 hover:scale-105 transition-all duration-300">Start 30-Day Trial</a>
+    </div>
+
+    <!-- Enterprise -->
+    <div class="pricing-card tilt-card bg-white/5 border border-white/[0.15] rounded-3xl p-8 reveal pricing-glow">
+      <h3 class="font-display font-extrabold text-white text-xl">Enterprise</h3>
+      <div class="mt-4"><span class="font-mono font-bold text-4xl text-white">₹35,000</span><span class="text-white/60 text-base ml-1">+ ₹1,499/mo</span></div>
+      <div class="text-white/50 text-sm font-body mt-1">license + managed cloud</div>
+      <p class="text-white/60 text-base mt-4 font-body">For chains, 5+ branches.</p>
+      <ul class="mt-6 space-y-3">
+        <li class="flex items-center gap-3 text-white/70 text-sm font-body"><span class="text-health">✓</span> Everything in Pro</li>
+        <li class="flex items-center gap-3 text-white/70 text-sm font-body"><span class="text-health">✓</span> Multi-branch dashboard</li>
+        <li class="flex items-center gap-3 text-white/70 text-sm font-body"><span class="text-health">✓</span> TPA &amp; insurance claims</li>
+        <li class="flex items-center gap-3 text-white/70 text-sm font-body"><span class="text-health">✓</span> Inter-branch transfers</li>
+        <li class="flex items-center gap-3 text-white/70 text-sm font-body"><span class="text-health">✓</span> Dedicated account manager</li>
+        <li class="flex items-center gap-3 text-white/70 text-sm font-body"><span class="text-health">✓</span> Custom LIS interfaces</li>
+      </ul>
+      <a href="https://wa.me/917204060651?text=Hello!%20I%20want%20to%20inquire%20about%20the%20MedX%20Enterprise%20plan%20or%20a%20managed%20demo." target="_blank" class="magnetic-btn shimmer-hover block text-center mt-8 border border-white/30 text-white px-8 py-4 rounded-full font-display font-bold hover:bg-white/10 transition-all duration-300">Request Enterprise Demo</a>
+    </div>
+  </div>
+  <p class="text-center mt-12 text-white/50 text-sm font-body max-w-2xl mx-auto">All prices are early bird — valid only for first 100 labs. Post-launch prices will be 30% higher. Purchases during early access include lifetime free updates for that major version.</p>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SECTION 10 · TESTIMONIALS                       -->
+<!-- ════════════════════════════════════════════════ -->
+<section class="bg-white py-24 px-6">
+  <div class="max-w-5xl mx-auto">
+    <h2 class="reveal font-display font-extrabold text-ink text-center" style="font-size:clamp(28px,3.5vw,40px);line-height:1.2">Labs that got early access<br>have a lot to say.</h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+      <div class="quote-card tilt-card bg-surface border border-gray-100 rounded-2xl p-8 relative reveal pricing-glow">
+        <span class="absolute top-4 left-6 font-serif text-[80px] text-brand/20 leading-none pointer-events-none select-none">"</span>
+        <p class="text-ink text-base font-body leading-relaxed relative z-10 mt-8">Finally, a lab software I don't need to call support for. Set it up myself in a Sunday afternoon.</p>
+        <div class="mt-6"><div class="text-amber-400 text-sm mb-2">★★★★★</div><div class="font-display font-bold text-ink text-sm">Dr. Amita Patel</div><div class="text-muted text-xs font-body">Patel Diagnostics, Surat</div></div>
+      </div>
+      <div class="quote-card tilt-card bg-surface border border-gray-100 rounded-2xl p-8 relative reveal pricing-glow">
+        <span class="absolute top-4 left-6 font-serif text-[80px] text-brand/20 leading-none pointer-events-none select-none">"</span>
+        <p class="text-ink text-base font-body leading-relaxed relative z-10 mt-8">The QR patient portal is something I didn't know I needed. Patients actually WhatsApp us now to say thank you.</p>
+        <div class="mt-6"><div class="text-amber-400 text-sm mb-2">★★★★★</div><div class="font-display font-bold text-ink text-sm">Rajesh Nair</div><div class="text-muted text-xs font-body">Nair Clinical Labs, Thrissur</div></div>
+      </div>
+      <div class="quote-card tilt-card bg-surface border border-gray-100 rounded-2xl p-8 relative reveal pricing-glow">
+        <span class="absolute top-4 left-6 font-serif text-[80px] text-brand/20 leading-none pointer-events-none select-none">"</span>
+        <p class="text-ink text-base font-body leading-relaxed relative z-10 mt-8">Works perfectly even when the power comes back and the internet doesn't. That alone is worth the price.</p>
+        <div class="mt-6"><div class="text-amber-400 text-sm mb-2">★★★★★</div><div class="font-display font-bold text-ink text-sm">Sunita Kapoor</div><div class="text-muted text-xs font-body">Kapoor Medical Centre Lab, Bhopal</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SECTION 11 · FINAL CTA                          -->
+<!-- ════════════════════════════════════════════════ -->
+<section id="waitlist" class="relative py-24 md:py-32 px-6 text-center overflow-hidden section-morph" style="background:linear-gradient(to bottom,#060E1D,#0D1B2A)">
+  <!-- Wallpaper (dark) -->
+  <div class="absolute inset-0 pointer-events-none opacity-[0.04] overflow-hidden select-none" aria-hidden="true">
+    <div class="lab-wallpaper-row font-mono text-[13px] text-white mt-[15%]" style="animation-delay:0s"><span>HbA1c · 7.2% · ↑HIGH · | · Platelet Count · 2.8 L/µL · NORMAL · | · TSH · 0.45 mIU/L · ✓ · | · CBC COMPLETE · WBC 9.4 · DIFF NORMAL · | · Creatinine · 0.9 mg/dL · ✓ · | · Bilirubin Total · 1.1 mg/dL · NORMAL · | · Vitamin D · 18 ng/mL · ↓LOW · | · LFT PANEL · SGPT 28 U/L · SGOT 32 U/L · ALP 76 U/L · | · Lipid Profile · LDL 142 mg/dL · ↑BORDERLINE · | · Urine R/M · Protein NIL · Glucose NIL · </span><span>HbA1c · 7.2% · ↑HIGH · | · Platelet Count · 2.8 L/µL · NORMAL · | · TSH · 0.45 mIU/L · ✓ · | · CBC COMPLETE · WBC 9.4 · DIFF NORMAL · | · Creatinine · 0.9 mg/dL · ✓ · | · Bilirubin Total · 1.1 mg/dL · NORMAL · | · Vitamin D · 18 ng/mL · ↓LOW · | · LFT PANEL · SGPT 28 U/L · SGOT 32 U/L · ALP 76 U/L · | · Lipid Profile · LDL 142 mg/dL · ↑BORDERLINE · | · Urine R/M · Protein NIL · Glucose NIL · </span></div>
+    <div class="lab-wallpaper-row font-mono text-[13px] text-white mt-[10%]" style="animation-delay:-25s"><span>CBC COMPLETE · WBC 9.4 · DIFF NORMAL · | · Creatinine · 0.9 mg/dL · ✓ · | · HbA1c · 7.2% · ↑HIGH · | · TSH · 0.45 mIU/L · ✓ · | · Vitamin D · 18 ng/mL · ↓LOW · | · LFT PANEL · SGPT 28 U/L · SGOT 32 U/L · ALP 76 U/L · | · Lipid Profile · LDL 142 mg/dL · ↑BORDERLINE · | · Urine R/M · Protein NIL · Glucose NIL · </span><span>CBC COMPLETE · WBC 9.4 · DIFF NORMAL · | · Creatinine · 0.9 mg/dL · ✓ · | · HbA1c · 7.2% · ↑HIGH · | · TSH · 0.45 mIU/L · ✓ · | · Vitamin D · 18 ng/mL · ↓LOW · | · LFT PANEL · SGPT 28 U/L · SGOT 32 U/L · ALP 76 U/L · | · Lipid Profile · LDL 142 mg/dL · ↑BORDERLINE · | · Urine R/M · Protein NIL · Glucose NIL · </span></div>
+  </div>
+
+  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none" style="background:radial-gradient(circle,rgba(29,78,216,0.15) 0%,transparent 70%)"></div>
+
+  <div class="relative z-10">
+    <div class="reveal inline-flex items-center gap-2 bg-white/10 border border-white/10 text-white/80 font-mono text-sm rounded-full px-6 py-2.5 mb-8">🧪 <span class="waitlist-count">512</span> labs waiting · 488 spots remaining at early bird price</div>
+    <h2 class="reveal font-display font-extrabold text-white" style="font-size:clamp(36px,5vw,60px);line-height:1.1">Your lab is one upgrade<br>away from being unforgettable.</h2>
+    <p class="reveal text-white/60 text-lg max-w-xl mx-auto mt-6 font-body leading-relaxed">MedX launches in 2025. Early access labs get priority onboarding, 30% lifetime pricing, and a dedicated setup call with the founding team.</p>
+
+    <div class="reveal mt-10 max-w-md mx-auto">
+      <form id="waitlist-form" class="flex flex-col sm:flex-row gap-3">
+        <input type="email" id="waitlist-email" placeholder="Enter your lab's email" class="flex-1 px-5 py-4 rounded-full bg-white/10 border border-white/20 text-white placeholder-white/40 font-body text-base focus:outline-none focus:border-vivid focus:ring-4 focus:ring-vivid/20 transition min-h-[44px]" required>
+        <button type="submit" class="magnetic-btn shimmer-hover bg-vivid text-white px-8 py-4 rounded-full font-display font-bold text-base hover:bg-sky-400 transition-all duration-300 shadow-lg whitespace-nowrap min-h-[44px]">Secure My Early Access →</button>
+      </form>
+      <div id="waitlist-form-error" class="text-red-400 text-sm mt-2 hidden font-body"></div>
+      <div id="waitlist-form-success" class="hidden text-center mt-4"></div>
+      <p class="text-white/40 text-sm mt-3 font-body">No spam. No commitment. Cancel anytime.</p>
+    </div>
+
+    <div class="reveal flex gap-6 justify-center mt-10 flex-wrap">
+      <span class="flex items-center gap-2 text-white/50 text-sm font-body">🔒 Your data stays in your lab</span>
+      <span class="flex items-center gap-2 text-white/50 text-sm font-body">⚡ 15-minute setup</span>
+      <span class="flex items-center gap-2 text-white/50 text-sm font-body">📞 Setup call included</span>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- SECTION 12 · FOOTER                             -->
+<!-- ════════════════════════════════════════════════ -->
+<footer class="bg-[#040A15] border-t border-white/5 py-16 px-6">
+  <div class="max-w-7xl mx-auto">
+    <div class="flex flex-col lg:flex-row justify-between items-start gap-10">
+      <div>
+        <a href="#" class="flex items-center gap-2 group">
+          <div class="flex gap-0.5 flex-wrap w-[22px] h-[22px] group-hover:scale-110 transition-transform"><div class="w-[10px] h-[10px] bg-brand rounded-sm"></div><div class="w-[10px] h-[10px] bg-vivid rounded-sm"></div><div class="w-[10px] h-[10px] bg-health rounded-sm"></div><div class="w-[10px] h-[10px] bg-brand/40 rounded-sm"></div></div>
+          <div class="flex flex-col leading-none"><span class="font-display font-extrabold text-white text-lg tracking-tight">MedX</span><span class="font-display font-medium text-brand text-[11px] -mt-0.5">Laboratory</span></div>
+        </a>
+        <p class="text-white/40 text-sm mt-2 max-w-xs font-body">Pathology lab software built for the labs India forgot.</p>
+      </div>
+      <div class="flex flex-col sm:flex-row gap-10 sm:gap-16">
+        <div><h4 class="font-display font-bold text-white text-sm mb-4">Product</h4><ul class="space-y-2"><li><a href="#features" class="text-white/50 text-sm font-body hover:text-white/80 transition">Features</a></li><li><a href="#how-it-works" class="text-white/50 text-sm font-body hover:text-white/80 transition">How It Works</a></li><li><a href="#pricing" class="text-white/50 text-sm font-body hover:text-white/80 transition">Pricing</a></li><li><a href="#" class="text-white/50 text-sm font-body hover:text-white/80 transition">Security</a></li></ul></div>
+        <div><h4 class="font-display font-bold text-white text-sm mb-4">Company</h4><ul class="space-y-2"><li><a href="#" class="text-white/50 text-sm font-body hover:text-white/80 transition">About MedX</a></li><li><a href="#" class="text-white/50 text-sm font-body hover:text-white/80 transition">Blog</a></li><li><a href="#" class="text-white/50 text-sm font-body hover:text-white/80 transition">Careers</a></li><li><a href="#" class="text-white/50 text-sm font-body hover:text-white/80 transition">Contact</a></li></ul></div>
+        <div><h4 class="font-display font-bold text-white text-sm mb-4">Legal</h4><ul class="space-y-2"><li><a href="#" class="text-white/50 text-sm font-body hover:text-white/80 transition">Privacy Policy</a></li><li><a href="#" class="text-white/50 text-sm font-body hover:text-white/80 transition">Terms of Service</a></li><li><a href="#" class="text-white/50 text-sm font-body hover:text-white/80 transition">Refund Policy</a></li></ul></div>
+      </div>
+    </div>
+    <div class="border-t border-white/5 mt-10 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+      <span class="text-white/30 text-sm font-body">© 2025 MedX Laboratory. All rights reserved.</span>
+      <span class="text-white/30 text-sm font-body">Made with ❤️ for Indian pathology labs</span>
+    </div>
+  </div>
+</footer>
+
+<!-- GSAP + ScrollTrigger (NO Lenis) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="script.js"></script>
+
+</body>
+</html>

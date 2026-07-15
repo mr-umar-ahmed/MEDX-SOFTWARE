@@ -1,0 +1,330 @@
+/* ═══════════════════════════════════════════════════
+   MEDX LABORATORY — STYLES
+   ═══════════════════════════════════════════════════ */
+
+/* ─── Reset & Base ─── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', sans-serif;
+  color: #0D1B2A;
+  overflow-x: hidden;
+  background: #FFFFFF;
+  cursor: none;
+}
+
+/* ─── Custom Cursor ─── */
+.cursor-dot {
+  position: fixed;
+  width: 8px; height: 8px;
+  background: #1D4ED8;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transition: transform 0.1s ease, opacity 0.3s ease;
+  mix-blend-mode: difference;
+  transform: translate(-50%, -50%);
+}
+.cursor-glow {
+  position: fixed;
+  width: 40px; height: 40px;
+  border: 2px solid rgba(29,78,216,0.4);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9998;
+  transition: width 0.3s ease, height 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+  transform: translate(-50%, -50%);
+}
+.cursor-glow.hovering {
+  width: 60px; height: 60px;
+  background: rgba(29,78,216,0.08);
+  border-color: rgba(14,165,233,0.6);
+}
+
+@media (pointer: coarse) {
+  .cursor-dot, .cursor-glow { display: none; }
+  body { cursor: auto; }
+}
+
+/* ─── Gradient Utilities ─── */
+.gradient-text {
+  background: linear-gradient(135deg, #1D4ED8 0%, #0EA5E9 50%, #059669 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.gradient-bg {
+  background: linear-gradient(135deg, #1D4ED8 0%, #0EA5E9 60%, #059669 100%);
+}
+
+/* ─── Glow Card Border (animated gradient) ─── */
+.glow-border {
+  position: relative;
+  background: #fff;
+  overflow: hidden;
+}
+.glow-border::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: conic-gradient(from var(--angle, 0deg), #1D4ED8, #0EA5E9, #059669, #1D4ED8);
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  animation: rotate-gradient 4s linear infinite;
+}
+.glow-border:hover::before {
+  opacity: 1;
+}
+.glow-border::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: inherit;
+  background: inherit;
+  z-index: -1;
+}
+
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes rotate-gradient {
+  to { --angle: 360deg; }
+}
+
+/* ─── Shadows ─── */
+.card-hover-shadow { box-shadow: 0 24px 48px rgba(13,27,42,0.12); }
+.mockup-glow { box-shadow: 0 40px 100px rgba(29,78,216,0.22); }
+
+/* ─── Animations ─── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(-1deg); }
+  50% { transform: translateY(-18px) rotate(1deg); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(6px); }
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.5); }
+}
+@keyframes ripple {
+  to { transform: scale(2.5); opacity: 0; }
+}
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes text-reveal {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0% 0 0); }
+}
+
+.animate-float { animation: float 6s ease-in-out infinite; }
+.shake { animation: shake 0.4s ease; }
+.pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+
+/* ─── Magnetic Button ─── */
+.magnetic-btn {
+  position: relative;
+  transition: transform 0.3s cubic-bezier(0.2, 0, 0.2, 1);
+  overflow: hidden;
+}
+.magnetic-btn .btn-ripple {
+  position: absolute;
+  width: 20px; height: 20px;
+  background: rgba(255,255,255,0.3);
+  border-radius: 50%;
+  transform: scale(0);
+  pointer-events: none;
+}
+.magnetic-btn .btn-ripple.active {
+  animation: ripple 0.6s ease-out forwards;
+}
+
+/* ─── Shimmer text on hover ─── */
+.shimmer-hover:hover {
+  background-image: linear-gradient(
+    110deg,
+    transparent 20%,
+    rgba(255,255,255,0.4) 50%,
+    transparent 80%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.2s ease-out;
+}
+
+/* ─── Navbar ─── */
+.navbar-scrolled {
+  background: rgba(255,255,255,0.92) !important;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid #E5E7EB;
+}
+
+/* ─── Mobile Menu ─── */
+.mobile-menu {
+  clip-path: circle(0% at calc(100% - 32px) 32px);
+  transition: clip-path 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+}
+.mobile-menu.open {
+  clip-path: circle(150% at calc(100% - 32px) 32px);
+}
+
+/* ─── Drift / Wallpaper ─── */
+@keyframes drift {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.lab-wallpaper-row {
+  animation: drift 60s linear infinite;
+  white-space: nowrap;
+}
+
+/* ─── Marquee ─── */
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes marquee2 {
+  0% { transform: translateX(50%); }
+  100% { transform: translateX(0%); }
+}
+
+/* ─── Tilt / Interactive Cards ─── */
+.tilt-card {
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+  will-change: transform;
+}
+
+/* ─── Reveal ─── */
+.reveal-up {
+  opacity: 0;
+  transform: translateY(50px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal-up.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ─── Interactive Feature Spotlight ─── */
+.feature-spotlight {
+  position: relative;
+}
+.feature-spotlight .spotlight-bg {
+  position: absolute;
+  width: 300px; height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(29,78,216,0.08) 0%, transparent 70%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.feature-spotlight:hover .spotlight-bg {
+  opacity: 1;
+}
+
+/* ─── Pricing card glow ─── */
+.pricing-glow {
+  position: relative;
+}
+.pricing-glow::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 1.5rem;
+  padding: 1px;
+  background: linear-gradient(135deg, #1D4ED8, #0EA5E9, #059669);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.pricing-glow:hover::before {
+  opacity: 1;
+}
+
+/* ─── Sparkle particles on hero ─── */
+.sparkle {
+  position: absolute;
+  width: 4px; height: 4px;
+  background: #1D4ED8;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0;
+}
+
+/* ─── Phone mockup notch ─── */
+.phone-notch {
+  width: 80px; height: 6px;
+  background: #0D1A2D;
+  border-radius: 3px;
+  margin: 0 auto 4px;
+}
+
+/* ─── Progress indicator ─── */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #1D4ED8, #0EA5E9, #059669);
+  z-index: 9999;
+  width: 0%;
+  transition: width 0.05s linear;
+}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+
+/* ─── Reduced Motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .reveal-up { opacity: 1 !important; transform: none !important; }
+  .cursor-dot, .cursor-glow { display: none; }
+  body { cursor: auto; }
+}
+
+/* ─── Tooltip ─── */
+.tooltip {
+  position: relative;
+}
+.tooltip::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: 110%;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  background: #0D1B2A;
+  color: #fff;
+  font-size: 11px;
+  font-family: 'Space Grotesk', sans-serif;
+  padding: 6px 12px;
+  border-radius: 8px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 100;
+}
+.tooltip:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
