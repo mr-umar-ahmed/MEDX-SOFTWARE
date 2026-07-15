@@ -1,6 +1,5 @@
-import * as fs from "fs";
-import * as path from "path";
 import { webcrypto } from "crypto";
+import { readJson, writeJson } from "./cloudStore";
 
 export interface LicenseRecord {
   id: string;
@@ -69,13 +68,20 @@ export interface AppConfig {
   maintenanceMode: boolean;
 }
 
-const PRIVATE_KEY_JWK = {
-  kty: "EC",
-  crv: "P-256",
-  x: "UG_kZ8mA9UgIY8UCE5D0AbjhCRETeRfgAupo-_XhWg4",
-  y: "71h7PikOhdbV0u41OdFbdjpQ51Gu7_EWnEU8R5t5P7g",
-  d: "SZ3LmOxvIWTvJabGb8g5ltqbMl-kGCU64Z0VWu9amYk",
-};
+/**
+ * License-signing private key (ECDSA P-256 JWK). Loaded from the environment —
+ * it must never appear in the repository. Set LICENSE_PRIVATE_KEY_JWK to the
+ * full JWK JSON: {"kty":"EC","crv":"P-256","x":"...","y":"...","d":"..."}
+ */
+function getPrivateKeyJwk(): JsonWebKey {
+  const raw = process.env.LICENSE_PRIVATE_KEY_JWK;
+  if (!raw) {
+    throw new Error(
+      "LICENSE_PRIVATE_KEY_JWK env var is not set. License signing is disabled until it is configured."
+    );
+  }
+  return JSON.parse(raw) as JsonWebKey;
+}
 
 // Base64Url encoder helper
 function bytesToBase64Url(bytes: Uint8Array): string {
@@ -93,7 +99,7 @@ async function signData(dataStr: string): Promise<string> {
   const { subtle } = webcrypto;
   const key = await subtle.importKey(
     "jwk",
-    PRIVATE_KEY_JWK,
+    getPrivateKeyJwk(),
     { name: "ECDSA", namedCurve: "P-256" },
     false,
     ["sign"]
@@ -111,78 +117,12 @@ async function signData(dataStr: string): Promise<string> {
   return bytesToBase64Url(new Uint8Array(signatureBuffer));
 }
 
-const BUCKET_URL = "https://kvdb.io/cae41247-25e4-414b-b0fa-bf1b49651a2c";
-
-function getDbDir(): string {
-  const isVercel = process.env.VERCEL === "1" || process.env.VERCEL_ENV;
-  const dbDir = isVercel
-    ? "/tmp/medx-db"
-    : path.join(process.cwd(), "..", "..", "Database");
-  if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true });
-  }
-  return dbDir;
-}
-
-async function readKey<T>(keyName: string, fallback: T): Promise<T> {
-  const localPath = path.join(getDbDir(), `${keyName}.json`);
-
-  // 1. Try fetching from remote persistent KV store
-  try {
-    const res = await fetch(`${BUCKET_URL}/${keyName}`, {
-      method: "GET",
-      headers: { "Cache-Control": "no-cache" },
-    });
-    if (res.ok) {
-      const text = await res.text();
-      // Cache locally
-      try {
-        fs.writeFileSync(localPath, text, "utf-8");
-      } catch (e) {}
-      return JSON.parse(text) as T;
-    }
-  } catch (err) {
-    console.error(`KVDB Read Failed for ${keyName}, falling back to local files:`, err);
-  }
-
-  // 2. Fallback to local files
-  if (fs.existsSync(localPath)) {
-    try {
-      return JSON.parse(fs.readFileSync(localPath, "utf-8")) as T;
-    } catch {
-      return fallback;
-    }
-  }
-  return fallback;
-}
-
-async function writeKey<T>(keyName: string, value: T): Promise<void> {
-  const text = JSON.stringify(value, null, 2);
-  const localPath = path.join(getDbDir(), `${keyName}.json`);
-
-  // 1. Write locally
-  try {
-    fs.writeFileSync(localPath, text, "utf-8");
-  } catch (e) {}
-
-  // 2. Write to remote persistent KV store
-  try {
-    await fetch(`${BUCKET_URL}/${keyName}`, {
-      method: "PUT",
-      body: text,
-      headers: { "Content-Type": "application/json" }
-    });
-  } catch (err) {
-    console.error(`KVDB Write Failed for ${keyName}:`, err);
-  }
-}
-
 export async function getLicenses(): Promise<LicenseRecord[]> {
-  return readKey<LicenseRecord[]>("admin-keys", []);
+  return readJson<LicenseRecord[]>("admin-keys", []);
 }
 
 export async function saveLicenses(list: LicenseRecord[]): Promise<void> {
-  return writeKey<LicenseRecord[]>("admin-keys", list);
+  return writeJson<LicenseRecord[]>("admin-keys", list);
 }
 
 export async function createLicense(
@@ -303,11 +243,11 @@ export async function registerHeartbeat(
 
 // --- CRM Helpers ---
 export async function getCustomers(): Promise<CustomerRecord[]> {
-  return readKey<CustomerRecord[]>("admin-customers", []);
+  return readJson<CustomerRecord[]>("admin-customers", []);
 }
 
 export async function saveCustomers(list: CustomerRecord[]): Promise<void> {
-  return writeKey<CustomerRecord[]>("admin-customers", list);
+  return writeJson<CustomerRecord[]>("admin-customers", list);
 }
 
 export async function createCustomer(
@@ -334,11 +274,11 @@ export async function createCustomer(
 
 // --- Billing Helpers ---
 export async function getPayments(): Promise<PaymentRecord[]> {
-  return readKey<PaymentRecord[]>("admin-payments", []);
+  return readJson<PaymentRecord[]>("admin-payments", []);
 }
 
 export async function savePayments(list: PaymentRecord[]): Promise<void> {
-  return writeKey<PaymentRecord[]>("admin-payments", list);
+  return writeJson<PaymentRecord[]>("admin-payments", list);
 }
 
 export async function createPayment(
@@ -367,11 +307,11 @@ export async function createPayment(
 
 // --- Tickets Helpers ---
 export async function getTickets(): Promise<TicketRecord[]> {
-  return readKey<TicketRecord[]>("admin-tickets", []);
+  return readJson<TicketRecord[]>("admin-tickets", []);
 }
 
 export async function saveTickets(list: TicketRecord[]): Promise<void> {
-  return writeKey<TicketRecord[]>("admin-tickets", list);
+  return writeJson<TicketRecord[]>("admin-tickets", list);
 }
 
 export async function createTicket(
@@ -401,7 +341,7 @@ export async function createTicket(
 
 // --- Config Helpers ---
 export async function getGlobalConfig(): Promise<AppConfig> {
-  return readKey<AppConfig>("admin-config", {
+  return readJson<AppConfig>("admin-config", {
     allowAbdm: true,
     allowWhatsApp: true,
     allowSms: true,
@@ -410,7 +350,7 @@ export async function getGlobalConfig(): Promise<AppConfig> {
 }
 
 export async function saveGlobalConfig(config: AppConfig): Promise<void> {
-  return writeKey<AppConfig>("admin-config", config);
+  return writeJson<AppConfig>("admin-config", config);
 }
 
 
