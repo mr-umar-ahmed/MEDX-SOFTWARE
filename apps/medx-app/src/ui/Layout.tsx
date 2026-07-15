@@ -167,7 +167,7 @@ export default function Layout() {
           )}
           <div>
             <div style={{ color: "#cbd5e1", fontWeight: 700 }}>{settings.name}</div>
-            <div style={{ color: "#64748b" }}>v0.1.0 · ● {activeLicense ? `${activeLicense.tier} Tier` : "Working offline"}</div>
+            <div style={{ color: "#64748b" }}>v0.2.0 · ● {activeLicense ? `${activeLicense.tier} Tier` : "Working offline"}</div>
             <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, marginTop: 4, color: "#64748b" }}>
               <div style={{ width: 8, height: 8, borderRadius: "50%", background: isCloudSynced ? "#10b981" : "#ef4444" }} />
               {isCloudSynced ? "Cloud Data Synced" : "Pending Cloud Sync"}

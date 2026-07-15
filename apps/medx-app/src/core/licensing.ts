@@ -29,8 +29,18 @@ function base64ToBytes(base64: string): Uint8Array {
   return bytes;
 }
 
-export async function verifyLicenseToken(token: string): Promise<LicenseData | null> {
+/**
+ * Removes every whitespace character from a pasted token. Tokens travel to
+ * labs over WhatsApp/email, which love to inject line breaks — one invisible
+ * newline makes a perfectly valid token fail verification.
+ */
+export function sanitizeToken(raw: string): string {
+  return raw.replace(/\s+/g, "");
+}
+
+export async function verifyLicenseToken(rawToken: string): Promise<LicenseData | null> {
   try {
+    const token = sanitizeToken(rawToken);
     const parts = token.split(".");
     if (parts.length !== 2) return null;
 
@@ -127,6 +137,13 @@ export interface HeartbeatCallbacks {
   onMessage?: (message: string | null) => void;
 }
 
+/** Outcome of one heartbeat attempt — shown to the user in Settings. */
+export interface HeartbeatOutcome {
+  at: string;
+  ok: boolean;
+  message: string;
+}
+
 /**
  * Pings the remote admin dashboard heartbeat endpoint. Besides the active/
  * revoked check, the heartbeat doubles as a control channel: it delivers
@@ -137,7 +154,8 @@ export async function checkLicenseHeartbeat(
   licenseKey: string,
   currentToken: string,
   callbacks: HeartbeatCallbacks
-): Promise<void> {
+): Promise<HeartbeatOutcome> {
+  const at = new Date().toISOString();
   try {
     const deviceId = getOrCreateDeviceId();
     const hostname = await getDeviceHostname();
@@ -148,35 +166,47 @@ export async function checkLicenseHeartbeat(
       body: JSON.stringify({ licenseKey, deviceId, hostname, currentToken }),
     });
 
-    if (res.ok) {
-      const data = await res.json();
-      if (data.success && data.active === false) {
-        // Only deactivate for definitive reasons. "unknown_key" can be a
-        // transient server/storage issue — a cryptographically valid token
-        // must not be dropped because of it (offline-first principle).
-        if (data.code === "unknown_key") {
-          console.warn("Heartbeat: server did not recognize the license key (keeping license).");
-          return;
-        }
-        console.warn("Heartbeat warning: License revoked/blocked!", data.error);
-        callbacks.onRevoked(data.error || "License has been revoked by the system administrator.");
-        return;
-      }
-
-      // Renewal / plan-change propagation — never trust the wire blindly:
-      // the refreshed token must pass local signature verification.
-      if (data.token && data.token !== currentToken && callbacks.onTokenRefresh) {
-        const verified = await verifyLicenseToken(data.token);
-        if (verified && verified.licenseKey === licenseKey) {
-          callbacks.onTokenRefresh(data.token, verified);
-        }
-      }
-
-      callbacks.onMessage?.(typeof data.adminMessage === "string" && data.adminMessage ? data.adminMessage : null);
+    if (!res.ok) {
+      return { at, ok: false, message: `License server responded with HTTP ${res.status}.` };
     }
+
+    const data = await res.json();
+    if (data.success && data.active === false) {
+      // Only deactivate for definitive reasons. "unknown_key" can be a
+      // transient server/storage issue — a cryptographically valid token
+      // must not be dropped because of it (offline-first principle).
+      if (data.code === "unknown_key") {
+        console.warn("Heartbeat: server did not recognize the license key (keeping license).");
+        return { at, ok: false, message: "Server does not recognize this license key. Contact your vendor." };
+      }
+      console.warn("Heartbeat warning: License revoked/blocked!", data.error);
+      callbacks.onRevoked(data.error || "License has been revoked by the system administrator.");
+      return { at, ok: false, message: data.error || "License revoked by the administrator." };
+    }
+
+    // Renewal / plan-change propagation — never trust the wire blindly:
+    // the refreshed token must pass local signature verification.
+    let refreshed = false;
+    if (data.token && data.token !== currentToken && callbacks.onTokenRefresh) {
+      const verified = await verifyLicenseToken(data.token);
+      if (verified && verified.licenseKey === licenseKey) {
+        callbacks.onTokenRefresh(data.token, verified);
+        refreshed = true;
+      }
+    }
+
+    callbacks.onMessage?.(typeof data.adminMessage === "string" && data.adminMessage ? data.adminMessage : null);
+    return {
+      at,
+      ok: true,
+      message: refreshed
+        ? "Connected — license updated by vendor (new validity/plan applied)."
+        : "Connected — license active, device registered.",
+    };
   } catch (err) {
-    // Silently fail if offline, as the system works offline-first.
-    console.log("Heartbeat skipped (network offline).");
+    // The system works offline-first — a failed check-in never blocks work.
+    console.log("Heartbeat skipped (network unreachable).");
+    return { at, ok: false, message: "Could not reach the license server — check internet/firewall. The app keeps working offline." };
   }
 }
 

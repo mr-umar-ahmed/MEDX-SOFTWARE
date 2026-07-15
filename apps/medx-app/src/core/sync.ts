@@ -138,7 +138,7 @@ export async function runHeartbeat() {
   const state = useStore.getState();
   const license = state.activeLicense;
   if (!license || !state.licenseToken) return;
-  await checkLicenseHeartbeat(license.licenseKey, state.licenseToken, {
+  const outcome = await checkLicenseHeartbeat(license.licenseKey, state.licenseToken, {
     onRevoked: (reason) => {
       useStore.setState({ licenseToken: "", activeLicense: null });
       alert(reason || "Your MedX License key has been revoked by the system administrator.");
@@ -149,6 +149,7 @@ export async function runHeartbeat() {
     },
     onMessage: (message) => useStore.setState({ adminNotice: message }),
   });
+  useStore.setState({ lastHeartbeat: outcome });
 }
 
 let debounceTimeout: any = null;

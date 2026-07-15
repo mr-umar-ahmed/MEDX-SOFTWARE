@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { verifyLicenseToken, checkLicenseHeartbeat, type LicenseData } from "../core/licensing";
+import { verifyLicenseToken, checkLicenseHeartbeat, sanitizeToken, type LicenseData, type HeartbeatOutcome } from "../core/licensing";
 import { parseAnalyzerFrame } from "../core/interfacing";
 import type {
   LabSettings, Patient, Doctor, StaffUser, Order, OrderItem, Payment, ResultValue,
@@ -116,6 +116,8 @@ interface StoreState {
   /** Message pushed by the software vendor (admin panel) via heartbeat. */
   adminNotice: string | null;
   dismissAdminNotice: () => void;
+  /** Result of the most recent license-server check-in (shown in Settings). */
+  lastHeartbeat: HeartbeatOutcome | null;
   interfacingLogs: Array<{ id: string; at: string; barcode: string; protocol: string; status: "success" | "error" | "not_found"; results: Record<string, string>; raw: string }>;
 
   // settings & users
@@ -224,6 +226,7 @@ export const useStore = create<StoreState>()(
       activeLicense: null,
       adminNotice: null,
       dismissAdminNotice: () => set({ adminNotice: null }),
+      lastHeartbeat: null,
       interfacingLogs: [],
 
       /* ---------- settings & users ---------- */
@@ -244,15 +247,18 @@ export const useStore = create<StoreState>()(
         }));
         get().log("permissions.update", `Updated permissions for ${role}`);
       },
-      activateLicense: async (token) => {
+      activateLicense: async (rawToken) => {
+        // WhatsApp/email routinely inject line breaks into long tokens —
+        // strip all whitespace before verifying AND before storing.
+        const token = sanitizeToken(rawToken);
         const verified = await verifyLicenseToken(token);
         if (verified) {
           set({ licenseToken: token, activeLicense: verified });
           get().log("license.activate", `Activated ${verified.tier} license for ${verified.labName}`);
-          
+
           // Instantly connect to the admin panel and register this device
           try {
-            await checkLicenseHeartbeat(verified.licenseKey, token, {
+            const outcome = await checkLicenseHeartbeat(verified.licenseKey, token, {
               onRevoked: (reason) => {
                 set({ licenseToken: "", activeLicense: null });
                 alert(reason || "Your license has been deactivated.");
@@ -263,6 +269,7 @@ export const useStore = create<StoreState>()(
               },
               onMessage: (message) => set({ adminNotice: message }),
             });
+            set({ lastHeartbeat: outcome });
           } catch (e) {}
 
           return true;
@@ -630,7 +637,7 @@ if (typeof window !== "undefined") {
               console.log(`✓ License refreshed by vendor: ${license.tier} tier, valid until ${license.validUntil}`);
             },
             onMessage: (message) => useStore.setState({ adminNotice: message }),
-          });
+          }).then((outcome) => useStore.setState({ lastHeartbeat: outcome }));
         } else {
           useStore.setState({ licenseToken: "", activeLicense: null });
           console.warn("⚠️ Stored license token failed verification.");

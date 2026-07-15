@@ -19,7 +19,7 @@ const FIELDS: Array<{ k: keyof LabSettings; label: string; wide?: boolean }> = [
 ];
 
 export default function Settings() {
-  const { settings, updateSettings, activeLicense, activateLicense } = useStore();
+  const { settings, updateSettings, activeLicense, activateLicense, lastHeartbeat } = useStore();
   const [form, setForm] = useState<LabSettings>(settings);
   const [saved, setSaved] = useState(false);
   const [inputKey, setInputKey] = useState("");
@@ -40,11 +40,15 @@ export default function Settings() {
   async function handleActivate() {
     if (!inputKey.trim()) return;
     setErr("");
-    const success = await activateLicense(inputKey.trim());
+    const success = await activateLicense(inputKey);
     if (success) {
       setInputKey("");
     } else {
-      setErr("Invalid license token key. Please check and try again.");
+      setErr(
+        "This license key failed verification. Make sure you pasted the COMPLETE token " +
+        "(it is very long). If it came through WhatsApp/email, copy it again in one piece. " +
+        "Keys issued before a security update are invalid — ask your vendor for a fresh key."
+      );
     }
   }
 
@@ -123,6 +127,18 @@ export default function Settings() {
                 <div><b>Registered Phone:</b> {activeLicense.contactPhone}</div>
                 <div><b>Valid Until:</b> {fmtDate(activeLicense.validUntil)}</div>
               </div>
+              {lastHeartbeat && (
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, marginBottom: 12,
+                  padding: "8px 12px", borderRadius: 8,
+                  background: lastHeartbeat.ok ? "#ecfdf5" : "#fef2f2",
+                  color: lastHeartbeat.ok ? "#047857" : "#b91c1c",
+                  border: `1px solid ${lastHeartbeat.ok ? "#a7f3d0" : "#fecaca"}`,
+                }}>
+                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: lastHeartbeat.ok ? "#10b981" : "#ef4444", flexShrink: 0 }} />
+                  <span><b>License server:</b> {lastHeartbeat.message} <span style={{ opacity: 0.7 }}>({new Date(lastHeartbeat.at).toLocaleTimeString()})</span></span>
+                </div>
+              )}
               <div className="row" style={{ gap: 8, alignItems: "center" }}>
                 <button className="btn" onClick={handleCheckNow} disabled={checking}>
                   {checking ? "Checking…" : "🔄 Check License Status Now"}
