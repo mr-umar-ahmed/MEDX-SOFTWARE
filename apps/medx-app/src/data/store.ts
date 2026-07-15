@@ -10,6 +10,7 @@ import type {
   UserRole,
 } from "./types";
 import type { Sex } from "../core/ranges";
+import { IS_DISPLAY_WINDOW } from "../lib/windowMode";
 import { evaluate, ageInDays } from "../core/ranges";
 import { computeInvoice, type LineInput } from "../core/gst";
 import { financialYear, formatInvoiceNo, formatAccessionNo, dayKey } from "../core/numbering";
@@ -31,6 +32,8 @@ declare global {
       connectSerialPort?: (path: string, baudRate: number) => Promise<{ success: boolean; error?: string }>;
       disconnectSerialPort?: () => Promise<{ success: boolean; error?: string }>;
       onSerialError?: (cb: (err: string) => void) => void;
+      broadcast?: (payload: string) => void;
+      onBroadcast?: (cb: (payload: string) => void) => void;
     };
   }
 }
@@ -583,10 +586,14 @@ export const useStore = create<StoreState>()(
           return localStorage.getItem(name);
         },
         setItem: (name, value) => {
+          // The counter display window is read-only: persisting its stale
+          // snapshot would overwrite newer data saved by the main window.
+          if (IS_DISPLAY_WINDOW) return;
           if (window.medx) return window.medx.setStore(name, value);
           localStorage.setItem(name, value);
         },
         removeItem: (name) => {
+          if (IS_DISPLAY_WINDOW) return;
           if (window.medx) return window.medx.removeStore(name);
           localStorage.removeItem(name);
         }

@@ -5,6 +5,10 @@ contextBridge.exposeInMainWorld("medx", {
   setStore: (key: string, value: string) => ipcRenderer.invoke("set-store", key, value),
   removeStore: (key: string) => ipcRenderer.invoke("remove-store", key),
   getHostname: () => ipcRenderer.invoke("get-hostname"),
+  broadcast: (payload: string) => ipcRenderer.send("medx-broadcast", payload),
+  onBroadcast: (callback: (payload: string) => void) => {
+    ipcRenderer.on("medx-broadcast", (_event, payload) => callback(payload));
+  },
   onAnalyzerRawData: (callback: (data: string) => void) => {
     ipcRenderer.on("analyzer-raw-data", (_event, data) => callback(data));
   },

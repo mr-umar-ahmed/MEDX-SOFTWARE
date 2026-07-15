@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu } from "electron";
+import { app, BrowserWindow, ipcMain, Menu, webContents } from "electron";
 import { autoUpdater } from "electron-updater";
 import * as path from "path";
 import * as os from "os";
@@ -22,6 +22,20 @@ function createWindow() {
   });
 
   mainWindow.removeMenu(); // Removes default File/Edit/View menu bar
+
+  // Child windows (e.g. the counter display opened from Queue/Tokens) get the
+  // same chrome-less treatment as the main window.
+  mainWindow.webContents.setWindowOpenHandler(() => ({
+    action: "allow",
+    overrideBrowserWindowOptions: {
+      autoHideMenuBar: true,
+      webPreferences: {
+        preload: path.join(__dirname, "preload.js"),
+        contextIsolation: true,
+        nodeIntegration: false,
+      },
+    },
+  }));
 
   // Right-click context menu
   mainWindow.webContents.on("context-menu", () => {
@@ -66,6 +80,16 @@ app.whenReady().then(() => {
 
   ipcMain.handle("remove-store", (_event, key: string) => {
     removeStore(key);
+  });
+
+  // Cross-window relay: forwards a renderer's broadcast (e.g. queue updates)
+  // to every other window, so the counter display stays live.
+  ipcMain.on("medx-broadcast", (event, payload: string) => {
+    for (const wc of webContents.getAllWebContents()) {
+      if (wc.id !== event.sender.id && !wc.isDestroyed()) {
+        wc.send("medx-broadcast", payload);
+      }
+    }
   });
 
   // Auto updater events
