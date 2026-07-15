@@ -304,10 +304,6 @@ app.whenReady().then(() => {
     autoUpdater.quitAndInstall();
   });
 
-  ipcMain.handle("get-hostname", () => {
-    return os.hostname();
-  });
-
   ipcMain.handle("simulate-tcp-transmission", (_event, data: string) => {
     return new Promise<void>((resolve, reject) => {
       const client = net.createConnection({ port: 8100 }, () => {
