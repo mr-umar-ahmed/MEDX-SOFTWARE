@@ -1,0 +1,8 @@
+# Never apply line-ending conversion to binary artifacts
+*.pdf  binary
+*.exe  binary
+*.png  binary
+*.jpg  binary
+*.ico  binary
+*.woff binary
+*.woff2 binary
