@@ -41,10 +41,12 @@ before the next starts.
 - ✅ Barcode label print, thermal 58mm receipt, token/counter display, backup scheduling
   (verified end-to-end 2026-07-13: reg → bill → results -> A4 report -> barcode sheet -> thermal receipt)
 
-## M5 — Licensing + Admin Panel  ⬜
-- ⬜ In-app license activation, heartbeat, offline grace, entitlement flags
-- ⬜ `apps/medx-admin` (Next.js + Firebase): issue/revoke keys, labs, payments, feature flags
-- ⬜ Wire feature flags → app gating
+## M5 — Licensing + Admin Panel  ✅ (live in production 2026-07-15)
+- ✅ In-app license activation (signed ECDSA tokens), heartbeat, entitlement tiers
+- ✅ `apps/medx-admin` (Next.js + Vercel Blob): issue/revoke keys, device limits, CRM,
+  payments, tickets, feature flags — live at https://medx-admin-lac.vercel.app
+- ✅ Password-protected admin login (proxy auth gate); signing key moved to env vars (rotated)
+- ✅ Wire license tiers → app gating (routes, sidebar, patient/day caps, WhatsApp lock)
 
 ## M6 — Pro features  ⬜
 - ⬜ Multi-counter LAN, QR patient portal, home collection, inventory, referral tracking,
@@ -68,3 +70,12 @@ then the M4 vertical slice that a real lab can use end-to-end.
 - **2026-07-13:** SQLite (better-sqlite3) local-first; paise integers for money; FY numbering.
 - **2026-07-13:** Admin cloud stores licensing metadata only (no patient data) → ₹0 free-tier cost.
 - **2026-07-13:** Delivery uses the lab's own WhatsApp/Gmail/SMS creds so admin bears no message cost.
+- **2026-07-15:** Cloud persistence moved to a **private Vercel Blob store** (free tier) after the
+  kvdb.io buckets died; `/tmp` on Vercel is not persistent. All admin + portal data now survives
+  serverless restarts.
+- **2026-07-15:** License signing keypair **rotated** (old private key had been committed to the
+  public repo). Private key now lives only in Vercel env vars; old tokens are invalid.
+- **2026-07-15:** Admin panel locked behind password auth (`proxy.ts` gate). Public surface is
+  only `/api/heartbeat` + sanitized `/api/labs-directory`.
+- **2026-07-15:** Patient-portal sync is validated server-side: unknown/revoked keys rejected,
+  Starter tier rejected (portal is Pro+; Starter data never leaves the lab PC).

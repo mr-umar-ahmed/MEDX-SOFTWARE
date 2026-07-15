@@ -1,6 +1,6 @@
 # MedX — Technical Architecture
 
-## 1. Two deployables
+## 1. Three deployables
 
 ### A. MedX Lab Software — `apps/medx-app`
 - **Type:** Electron desktop app, single Windows `.exe` installer (NSIS via electron-builder).
@@ -16,14 +16,33 @@
   cloud/portal features on higher plans.
 
 ### B. MedX Admin Panel — `apps/medx-admin`
-- **Type:** Next.js web app on Vercel.
-- **Backend:** Firebase — **Auth** (admin login) + **Firestore** (licenses, labs, payments,
-  feature flags, support tickets).
+- **Type:** Next.js web app on Vercel. **Live:** https://medx-admin-lac.vercel.app
+- **Auth:** password login (`ADMIN_PASSWORD` env var) → HMAC-signed session cookie, enforced for
+  every page/API by `src/proxy.ts`. Public exceptions: `/api/heartbeat` (desktop check-ins) and
+  `/api/labs-directory` (sanitized lab list for the patient site — no tokens/devices exposed).
+- **Storage:** **Vercel Blob** (private store `medx-db`, free tier) through `src/lib/cloudStore.ts`.
+  One JSON document per collection: `admin-keys`, `admin-customers`, `admin-payments`,
+  `admin-tickets`, `admin-config`. Local dev without a token falls back to `Database/*.json`.
+- **License signing:** ECDSA P-256. The **private key lives only in the `LICENSE_PRIVATE_KEY_JWK`
+  env var** (never in the repo — the original hardcoded key was rotated 2026-07-15 after being
+  committed publicly). The matching public key is baked into the desktop app.
 - **Purpose:** the admin issues/revokes license keys, binds devices, records payments, sets each
   lab's plan + feature entitlements, and reads telemetry the app reports on heartbeat.
 
+### C. MedX Patient Website — `apps/medx-web`
+- **Type:** Next.js web app on Vercel. **Live:** https://medx-web-one.vercel.app
+- **Purpose:** public lab directory + home-collection booking + QR patient portal (invoice no. +
+  registered phone → report history with result values).
+- **Sync:** `POST /api/sync` receives pushes from licensed desktop apps and stores one document
+  per lab (`labs/<licenseKey>`) in the same private Blob store. Every push is validated against
+  the admin labs directory; unknown/revoked keys are rejected, and **Starter-tier keys are
+  rejected** — the portal is a Pro/Enterprise feature, so Starter patient data never leaves the
+  lab PC.
+
 > The admin cloud only ever stores **account/licensing metadata** — never patient data (for Plan
 > 1 & 2). That keeps it tiny → free tier → ₹0 admin cost, and sidesteps health-data liability.
+> Pro/Enterprise labs opt into the patient portal, whose synced data lives in a **private,
+> token-authenticated** blob store.
 
 ## 2. Data model (lab app, SQLite)
 
