@@ -353,10 +353,16 @@ export default function TenantsPage() {
                                 <Trash2 size={13} /> Revoke License
                               </button>
                             ) : (
-                              <button className="btn" style={{ fontSize: 12, padding: "6px 10px", border: "1px solid #bbf7d0", color: "#10b981", background: "none", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }} disabled={busyAction !== null}
-                                onClick={() => runAction("reactivate", { id: lic.id, action: "reactivate" })}>
-                                <RotateCcw size={13} /> {busyAction === "reactivate" ? "…" : "Reactivate License"}
-                              </button>
+                              <>
+                                <button className="btn" style={{ fontSize: 12, padding: "6px 10px", border: "1px solid #bbf7d0", color: "#10b981", background: "none", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }} disabled={busyAction !== null}
+                                  onClick={() => runAction("reactivate", { id: lic.id, action: "reactivate" })}>
+                                  <RotateCcw size={13} /> {busyAction === "reactivate" ? "…" : "Reactivate License"}
+                                </button>
+                                <button className="btn" style={{ fontSize: 12, padding: "6px 10px", border: "1px solid #fecaca", color: "#ef4444", background: "none", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }} disabled={busyAction !== null}
+                                  onClick={() => { if (confirm(`Permanently delete ${lic.labName} (${lic.id})? This cannot be undone.`)) { setExpandedId(null); runAction("delete", { id: lic.id, action: "delete" }); } }}>
+                                  <Trash2 size={13} /> {busyAction === "delete" ? "…" : "Delete Permanently"}
+                                </button>
+                              </>
                             )}
                           </div>
                         </div>

@@ -133,8 +133,8 @@ export async function pullWebBookings(): Promise<number> {
   }
 }
 
-/** Periodic license check-in: revocation, renewals, and vendor messages. */
-async function runHeartbeat() {
+/** License check-in: revocation, renewals, and vendor messages. */
+export async function runHeartbeat() {
   const state = useStore.getState();
   const license = state.activeLicense;
   if (!license || !state.licenseToken) return;

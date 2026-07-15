@@ -1,4 +1,4 @@
-import { get, put, list } from "@vercel/blob";
+import { get, put, list, del } from "@vercel/blob";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -70,6 +70,16 @@ export async function writeJson<T>(key: string, value: T): Promise<void> {
   }
 
   fs.writeFileSync(localPathFor(key), text, "utf-8");
+}
+
+/** Permanently delete one JSON document (no-op when it doesn't exist). */
+export async function deleteJson(key: string): Promise<void> {
+  if (hasBlob()) {
+    await del(blobPathFor(key));
+    return;
+  }
+  const p = localPathFor(key);
+  if (fs.existsSync(p)) fs.unlinkSync(p);
 }
 
 /**

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useStore } from "../data/store";
 import type { LabSettings } from "../data/types";
 import { fmtDate } from "../lib/format";
+import { runHeartbeat } from "../core/sync";
 
 const FIELDS: Array<{ k: keyof LabSettings; label: string; wide?: boolean }> = [
   { k: "name", label: "Lab Name", wide: true },
@@ -23,6 +24,18 @@ export default function Settings() {
   const [saved, setSaved] = useState(false);
   const [inputKey, setInputKey] = useState("");
   const [err, setErr] = useState("");
+  const [checking, setChecking] = useState(false);
+  const [checkedAt, setCheckedAt] = useState<string | null>(null);
+
+  async function handleCheckNow() {
+    setChecking(true);
+    try {
+      await runHeartbeat();
+      setCheckedAt(new Date().toLocaleTimeString());
+    } finally {
+      setChecking(false);
+    }
+  }
 
   async function handleActivate() {
     if (!inputKey.trim()) return;
@@ -110,7 +123,13 @@ export default function Settings() {
                 <div><b>Registered Phone:</b> {activeLicense.contactPhone}</div>
                 <div><b>Valid Until:</b> {fmtDate(activeLicense.validUntil)}</div>
               </div>
-              <button className="btn btn-danger" onClick={handleDeactivate}>Deactivate License</button>
+              <div className="row" style={{ gap: 8, alignItems: "center" }}>
+                <button className="btn" onClick={handleCheckNow} disabled={checking}>
+                  {checking ? "Checking…" : "🔄 Check License Status Now"}
+                </button>
+                <button className="btn btn-danger" onClick={handleDeactivate}>Deactivate License</button>
+                {checkedAt && <span className="muted" style={{ fontSize: 12 }}>Checked at {checkedAt} — renewals, plan changes &amp; vendor messages applied.</span>}
+              </div>
             </div>
           ) : (
             <div>

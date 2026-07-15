@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getLicenses, registerHeartbeat } from "@/lib/adminDb";
+import { registerHeartbeat } from "@/lib/adminDb";
 import { verifyTokenSignature } from "@/lib/licenseVerify";
 
 function setCorsHeaders(res: NextResponse): NextResponse {
@@ -22,21 +22,20 @@ export async function POST(req: Request) {
       return setCorsHeaders(res);
     }
 
-    const list = await getLicenses();
-    const record = list.find((l) => l.id === licenseKey);
-
-    if (!record) {
-      const res = NextResponse.json({ success: true, active: false, error: "License key is invalid" });
-      return setCorsHeaders(res);
-    }
-
     // Register heartbeat timestamp and check device connection limit
     const result = await registerHeartbeat(licenseKey, deviceId, hostname);
 
-    if (!result.active) {
-      const res = NextResponse.json({ success: true, active: false, error: result.error });
+    if (!result.active || !result.record) {
+      const res = NextResponse.json({
+        success: true,
+        active: false,
+        code: result.code,
+        error: result.error,
+      });
       return setCorsHeaders(res);
     }
+
+    const record = result.record;
 
     // Heartbeat doubles as the control channel:
     // - `token`: the current signed token, returned only when the caller

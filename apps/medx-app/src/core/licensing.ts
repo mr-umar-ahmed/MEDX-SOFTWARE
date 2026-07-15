@@ -151,7 +151,14 @@ export async function checkLicenseHeartbeat(
     if (res.ok) {
       const data = await res.json();
       if (data.success && data.active === false) {
-        console.warn("Heartbeat warning: License revoked/invalid!", data.error);
+        // Only deactivate for definitive reasons. "unknown_key" can be a
+        // transient server/storage issue — a cryptographically valid token
+        // must not be dropped because of it (offline-first principle).
+        if (data.code === "unknown_key") {
+          console.warn("Heartbeat: server did not recognize the license key (keeping license).");
+          return;
+        }
+        console.warn("Heartbeat warning: License revoked/blocked!", data.error);
         callbacks.onRevoked(data.error || "License has been revoked by the system administrator.");
         return;
       }

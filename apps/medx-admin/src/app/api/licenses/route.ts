@@ -8,6 +8,7 @@ import {
   setLicenseTier,
   removeLicenseDevice,
   setLicenseMessage,
+  deleteLicense,
 } from "@/lib/adminDb";
 
 function setCorsHeaders(res: NextResponse): NextResponse {
@@ -112,6 +113,16 @@ export async function PATCH(req: Request) {
       case "setMessage":
         await setLicenseMessage(id, String(body.message ?? ""));
         return setCorsHeaders(NextResponse.json({ success: true }));
+
+      case "delete": {
+        const result = await deleteLicense(id);
+        if (!result.ok) {
+          return setCorsHeaders(
+            NextResponse.json({ success: false, error: result.error }, { status: 400 })
+          );
+        }
+        return setCorsHeaders(NextResponse.json({ success: true }));
+      }
 
       default:
         return setCorsHeaders(

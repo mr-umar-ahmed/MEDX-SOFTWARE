@@ -1,5 +1,5 @@
 import { webcrypto } from "crypto";
-import { readJson, writeJson } from "./cloudStore";
+import { readJson, writeJson, listJson, deleteJson } from "./cloudStore";
 
 export interface LicenseRecord {
   id: string;
@@ -119,12 +119,51 @@ async function signData(dataStr: string): Promise<string> {
   return bytesToBase64Url(new Uint8Array(signatureBuffer));
 }
 
-export async function getLicenses(): Promise<LicenseRecord[]> {
-  return readJson<LicenseRecord[]>("admin-keys", []);
+/**
+ * Licenses are stored as ONE document per license ("license/<id>").
+ *
+ * They used to live in a single shared array ("admin-keys"), but concurrent
+ * serverless invocations doing read-modify-write on that one blob raced each
+ * other: a heartbeat for lab A could resurrect a just-revoked lab B or erase
+ * a just-created license entirely. Per-license documents make every routine
+ * operation touch only its own record.
+ */
+const LICENSE_PREFIX = "license/";
+
+async function loadLicense(id: string): Promise<LicenseRecord | null> {
+  return readJson<LicenseRecord | null>(LICENSE_PREFIX + id, null);
 }
 
-export async function saveLicenses(list: LicenseRecord[]): Promise<void> {
-  return writeJson<LicenseRecord[]>("admin-keys", list);
+async function saveLicense(record: LicenseRecord): Promise<void> {
+  await writeJson(LICENSE_PREFIX + record.id, record);
+}
+
+/** One-time migration of any records still in the legacy shared blob. */
+async function migrateLegacyLicenses(): Promise<LicenseRecord[]> {
+  const legacy = await readJson<LicenseRecord[]>("admin-keys", []);
+  if (legacy.length === 0) return [];
+  const migrated: LicenseRecord[] = [];
+  for (const record of legacy) {
+    const existing = await loadLicense(record.id);
+    if (!existing) {
+      await saveLicense(record);
+      migrated.push(record);
+    }
+  }
+  await writeJson<LicenseRecord[]>("admin-keys", []); // drain so this runs once
+  return migrated;
+}
+
+export async function getLicenses(): Promise<LicenseRecord[]> {
+  const docs = await listJson<LicenseRecord>(LICENSE_PREFIX);
+  const list = docs.map((d) => d.value);
+  const known = new Set(list.map((l) => l.id));
+  for (const rec of await migrateLegacyLicenses()) {
+    if (!known.has(rec.id)) list.push(rec);
+  }
+  return list.sort(
+    (a, b) => new Date(b.issuedAt).getTime() - new Date(a.issuedAt).getTime()
+  );
 }
 
 export async function createLicense(
@@ -167,23 +206,36 @@ export async function createLicense(
     devices: [],
   };
 
-  const all = await getLicenses();
-  all.unshift(record);
-  await saveLicenses(all);
-
+  await saveLicense(record);
   return record;
 }
 
 export async function revokeLicense(id: string): Promise<void> {
-  const all = await getLicenses();
-  const updated = all.map((l) => (l.id === id ? { ...l, status: "revoked" as const } : l));
-  await saveLicenses(updated);
+  const record = await loadLicense(id);
+  if (!record) return;
+  record.status = "revoked";
+  await saveLicense(record);
 }
 
 export async function reactivateLicense(id: string): Promise<void> {
-  const all = await getLicenses();
-  const updated = all.map((l) => (l.id === id ? { ...l, status: "active" as const } : l));
-  await saveLicenses(updated);
+  const record = await loadLicense(id);
+  if (!record) return;
+  record.status = "active";
+  await saveLicense(record);
+}
+
+/**
+ * Permanently deletes a license record. Guarded: only revoked licenses can
+ * be deleted, so an active customer can't be wiped by accident.
+ */
+export async function deleteLicense(id: string): Promise<{ ok: boolean; error?: string }> {
+  const record = await loadLicense(id);
+  if (!record) return { ok: false, error: "License not found." };
+  if (record.status !== "revoked") {
+    return { ok: false, error: "Only revoked licenses can be deleted. Revoke it first." };
+  }
+  await deleteJson(LICENSE_PREFIX + id);
+  return { ok: true };
 }
 
 /** Re-signs a license token after its tier or validity changed. */
@@ -207,16 +259,13 @@ async function resignToken(record: LicenseRecord): Promise<string> {
  * lab's desktop app on its next heartbeat.
  */
 export async function extendLicense(id: string, days: number): Promise<LicenseRecord | null> {
-  const all = await getLicenses();
-  const index = all.findIndex((l) => l.id === id);
-  if (index === -1) return null;
+  const record = await loadLicense(id);
+  if (!record) return null;
 
-  const record = all[index];
   const base = Math.max(new Date(record.validUntil).getTime(), Date.now());
   record.validUntil = new Date(base + days * 24 * 60 * 60 * 1000).toISOString();
   record.token = await resignToken(record);
-  all[index] = record;
-  await saveLicenses(all);
+  await saveLicense(record);
   return record;
 }
 
@@ -225,43 +274,41 @@ export async function setLicenseTier(
   id: string,
   tier: "Starter" | "Pro" | "Enterprise"
 ): Promise<LicenseRecord | null> {
-  const all = await getLicenses();
-  const index = all.findIndex((l) => l.id === id);
-  if (index === -1) return null;
+  const record = await loadLicense(id);
+  if (!record) return null;
 
-  const record = all[index];
   record.tier = tier;
   record.token = await resignToken(record);
-  all[index] = record;
-  await saveLicenses(all);
+  await saveLicense(record);
   return record;
 }
 
 /** Frees a device slot (e.g. the lab replaced a PC). */
 export async function removeLicenseDevice(id: string, deviceId: string): Promise<boolean> {
-  const all = await getLicenses();
-  const index = all.findIndex((l) => l.id === id);
-  if (index === -1) return false;
+  const record = await loadLicense(id);
+  if (!record) return false;
 
-  const before = all[index].devices?.length ?? 0;
-  all[index].devices = (all[index].devices || []).filter((d) => d.deviceId !== deviceId);
-  await saveLicenses(all);
-  return (all[index].devices?.length ?? 0) < before;
+  const before = record.devices?.length ?? 0;
+  record.devices = (record.devices || []).filter((d) => d.deviceId !== deviceId);
+  await saveLicense(record);
+  return (record.devices?.length ?? 0) < before;
 }
 
 /** Sets (or clears, with an empty string) the lab's heartbeat message. */
 export async function setLicenseMessage(id: string, message: string): Promise<void> {
-  const all = await getLicenses();
-  const updated = all.map((l) =>
-    l.id === id ? { ...l, adminMessage: message.trim() || undefined } : l
-  );
-  await saveLicenses(updated);
+  const record = await loadLicense(id);
+  if (!record) return;
+  record.adminMessage = message.trim() || undefined;
+  await saveLicense(record);
 }
 
 export interface HeartbeatResult {
   success: boolean;
   active: boolean;
   error?: string;
+  /** Machine-readable reason so the client can react appropriately. */
+  code?: "revoked" | "unknown_key" | "device_limit";
+  record?: LicenseRecord;
 }
 
 export async function registerHeartbeat(
@@ -269,15 +316,29 @@ export async function registerHeartbeat(
   deviceId: string,
   hostname: string
 ): Promise<HeartbeatResult> {
-  const all = await getLicenses();
-  const index = all.findIndex((l) => l.id === id);
-  if (index === -1) {
-    return { success: false, active: false, error: "License key is invalid." };
+  let license = await loadLicense(id);
+  if (!license) {
+    // The record may still live in the legacy shared blob — migrate and retry.
+    await migrateLegacyLicenses();
+    license = await loadLicense(id);
   }
-  
-  const license = all[index];
+  if (!license) {
+    return {
+      success: true,
+      active: false,
+      code: "unknown_key",
+      error: "License key is not recognized.",
+    };
+  }
+
   if (license.status === "revoked") {
-    return { success: true, active: false, error: "This license key has been revoked by administrators." };
+    return {
+      success: true,
+      active: false,
+      code: "revoked",
+      error: "This license key has been revoked by administrators.",
+      record: license,
+    };
   }
 
   // Device limits mapping
@@ -302,7 +363,9 @@ export async function registerHeartbeat(
       return {
         success: true,
         active: false,
+        code: "device_limit",
         error: `Device limit exceeded. Under your ${license.tier} plan, you are allowed up to ${limit} connected devices/installations. Please contact admin to upgrade.`,
+        record: license,
       };
     }
     // Register new device
@@ -315,10 +378,9 @@ export async function registerHeartbeat(
 
   license.devices = devicesList;
   license.lastHeartbeatAt = new Date().toISOString();
-  all[index] = license;
-  
-  await saveLicenses(all);
-  return { success: true, active: true };
+
+  await saveLicense(license);
+  return { success: true, active: true, record: license };
 }
 
 // --- CRM Helpers ---
