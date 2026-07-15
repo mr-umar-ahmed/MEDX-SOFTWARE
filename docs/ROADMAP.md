@@ -53,8 +53,9 @@ before the next starts.
 - ✅ Analyzer interfacing LIS (verified serial/TCP ASTM and HL7 parser frame handling)
 - ⬜ QR patient portal, home collection, inventory, referral tracking, doctor commission, MIS, histopath narrative editor
 
-## M7 — Enterprise features  ⬜
-- ⬜ Multi-branch/cloud sync, NABL quality module, ABDM/ABHA, TPA billing, doctor portal, API
+## M7 — Enterprise features  🚧
+- ✅ NABL quality control module (Levey-Jennings charts & Westgard Rules engine complete)
+- ⬜ Multi-branch/cloud sync, ABDM/ABHA, TPA billing, doctor portal, API
 
 ## M8 — Packaging & release  ⬜
 - ⬜ electron-builder Windows installer, auto-update channel, signed entitlements
