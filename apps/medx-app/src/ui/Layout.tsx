@@ -101,6 +101,8 @@ export default function Layout() {
   const rolePermissions = useStore((s) => s.rolePermissions);
   const activeLicense = useStore((s) => s.activeLicense);
   const lastCloudSync = useStore((s) => s.lastCloudSync);
+  const adminNotice = useStore((s) => s.adminNotice);
+  const dismissAdminNotice = useStore((s) => s.dismissAdminNotice);
 
   const currentUser = users.find((u) => u.id === currentUserId);
   const role = currentUser?.role || "Receptionist";
@@ -174,6 +176,19 @@ export default function Layout() {
         </div>
       </aside>
       <div className="main">
+        {adminNotice && (
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+            background: "#fffbeb", border: "1px solid #fde68a", color: "#92400e",
+            borderRadius: 10, padding: "10px 16px", margin: "12px 16px 0 16px", fontSize: 13, fontWeight: 600,
+          }}>
+            <span>📢 Message from MedX: {adminNotice}</span>
+            <button onClick={dismissAdminNotice} title="Dismiss"
+              style={{ background: "none", border: "none", cursor: "pointer", color: "#92400e", fontWeight: 800, fontSize: 14 }}>
+              ✕
+            </button>
+          </div>
+        )}
         {routeAllowed ? <Outlet /> : <LockedScreen requiredTier={requiredTier} />}
       </div>
     </div>

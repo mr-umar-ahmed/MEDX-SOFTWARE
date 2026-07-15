@@ -12,6 +12,8 @@ export interface LicenseRecord {
   status: "active" | "revoked";
   lastHeartbeatAt?: string;
   devices?: Array<{ deviceId: string; hostname: string; lastSeenAt: string }>;
+  /** Message delivered to the lab's desktop app on its next heartbeat. */
+  adminMessage?: string;
 }
 
 export interface CustomerNote {
@@ -175,6 +177,84 @@ export async function createLicense(
 export async function revokeLicense(id: string): Promise<void> {
   const all = await getLicenses();
   const updated = all.map((l) => (l.id === id ? { ...l, status: "revoked" as const } : l));
+  await saveLicenses(updated);
+}
+
+export async function reactivateLicense(id: string): Promise<void> {
+  const all = await getLicenses();
+  const updated = all.map((l) => (l.id === id ? { ...l, status: "active" as const } : l));
+  await saveLicenses(updated);
+}
+
+/** Re-signs a license token after its tier or validity changed. */
+async function resignToken(record: LicenseRecord): Promise<string> {
+  const licenseBody = {
+    licenseKey: record.id,
+    labName: record.labName,
+    contactPhone: record.contactPhone,
+    issuedAt: record.issuedAt,
+    validUntil: record.validUntil,
+    tier: record.tier,
+  };
+  const bodyB64 = bytesToBase64Url(new TextEncoder().encode(JSON.stringify(licenseBody)));
+  const sigB64 = await signData(bodyB64);
+  return `${bodyB64}.${sigB64}`;
+}
+
+/**
+ * Extends a license by `days`, counted from its current expiry (or from now
+ * if it already lapsed). Re-signs the token so the renewal propagates to the
+ * lab's desktop app on its next heartbeat.
+ */
+export async function extendLicense(id: string, days: number): Promise<LicenseRecord | null> {
+  const all = await getLicenses();
+  const index = all.findIndex((l) => l.id === id);
+  if (index === -1) return null;
+
+  const record = all[index];
+  const base = Math.max(new Date(record.validUntil).getTime(), Date.now());
+  record.validUntil = new Date(base + days * 24 * 60 * 60 * 1000).toISOString();
+  record.token = await resignToken(record);
+  all[index] = record;
+  await saveLicenses(all);
+  return record;
+}
+
+/** Upgrades/downgrades a license tier and re-signs its token. */
+export async function setLicenseTier(
+  id: string,
+  tier: "Starter" | "Pro" | "Enterprise"
+): Promise<LicenseRecord | null> {
+  const all = await getLicenses();
+  const index = all.findIndex((l) => l.id === id);
+  if (index === -1) return null;
+
+  const record = all[index];
+  record.tier = tier;
+  record.token = await resignToken(record);
+  all[index] = record;
+  await saveLicenses(all);
+  return record;
+}
+
+/** Frees a device slot (e.g. the lab replaced a PC). */
+export async function removeLicenseDevice(id: string, deviceId: string): Promise<boolean> {
+  const all = await getLicenses();
+  const index = all.findIndex((l) => l.id === id);
+  if (index === -1) return false;
+
+  const before = all[index].devices?.length ?? 0;
+  all[index].devices = (all[index].devices || []).filter((d) => d.deviceId !== deviceId);
+  await saveLicenses(all);
+  return (all[index].devices?.length ?? 0) < before;
+}
+
+/** Sets (or clears, with an empty string) the lab's heartbeat message. */
+export async function setLicenseMessage(id: string, message: string): Promise<void> {
+  const all = await getLicenses();
+  const updated = all.map((l) =>
+    l.id === id ? { ...l, adminMessage: message.trim() || undefined } : l
+  );
   await saveLicenses(updated);
 }
 

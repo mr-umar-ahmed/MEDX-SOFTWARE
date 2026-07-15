@@ -119,10 +119,25 @@ export async function getDeviceHostname(): Promise<string> {
   return typeof window !== "undefined" ? window.location.hostname : "unknown-pc";
 }
 
+export interface HeartbeatCallbacks {
+  onRevoked: (reason?: string) => void;
+  /** A renewed/re-tiered token was issued by the admin — store it. */
+  onTokenRefresh?: (newToken: string, license: LicenseData) => void;
+  /** Admin message for this lab (null = no active message → clear banner). */
+  onMessage?: (message: string | null) => void;
+}
+
 /**
- * Pings the remote admin dashboard heartbeat endpoint to check if the license is still active.
+ * Pings the remote admin dashboard heartbeat endpoint. Besides the active/
+ * revoked check, the heartbeat doubles as a control channel: it delivers
+ * license renewals/tier changes (a re-signed token, verified locally before
+ * being accepted) and admin messages to display inside the app.
  */
-export async function checkLicenseHeartbeat(licenseKey: string, onRevoked: (reason?: string) => void): Promise<void> {
+export async function checkLicenseHeartbeat(
+  licenseKey: string,
+  currentToken: string,
+  callbacks: HeartbeatCallbacks
+): Promise<void> {
   try {
     const deviceId = getOrCreateDeviceId();
     const hostname = await getDeviceHostname();
@@ -130,15 +145,27 @@ export async function checkLicenseHeartbeat(licenseKey: string, onRevoked: (reas
     const res = await fetch(adminUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ licenseKey, deviceId, hostname }),
+      body: JSON.stringify({ licenseKey, deviceId, hostname, currentToken }),
     });
-    
+
     if (res.ok) {
       const data = await res.json();
       if (data.success && data.active === false) {
         console.warn("Heartbeat warning: License revoked/invalid!", data.error);
-        onRevoked(data.error || "License has been revoked by the system administrator.");
+        callbacks.onRevoked(data.error || "License has been revoked by the system administrator.");
+        return;
       }
+
+      // Renewal / plan-change propagation — never trust the wire blindly:
+      // the refreshed token must pass local signature verification.
+      if (data.token && data.token !== currentToken && callbacks.onTokenRefresh) {
+        const verified = await verifyLicenseToken(data.token);
+        if (verified && verified.licenseKey === licenseKey) {
+          callbacks.onTokenRefresh(data.token, verified);
+        }
+      }
+
+      callbacks.onMessage?.(typeof data.adminMessage === "string" && data.adminMessage ? data.adminMessage : null);
     }
   } catch (err) {
     // Silently fail if offline, as the system works offline-first.

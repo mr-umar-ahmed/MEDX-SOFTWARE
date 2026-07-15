@@ -110,6 +110,9 @@ interface StoreState {
   licenseToken?: string;
   activeLicense: LicenseData | null;
   lastCloudSync?: number;
+  /** Message pushed by the software vendor (admin panel) via heartbeat. */
+  adminNotice: string | null;
+  dismissAdminNotice: () => void;
   interfacingLogs: Array<{ id: string; at: string; barcode: string; protocol: string; status: "success" | "error" | "not_found"; results: Record<string, string>; raw: string }>;
 
   // settings & users
@@ -216,6 +219,8 @@ export const useStore = create<StoreState>()(
       },
       licenseToken: "",
       activeLicense: null,
+      adminNotice: null,
+      dismissAdminNotice: () => set({ adminNotice: null }),
       interfacingLogs: [],
 
       /* ---------- settings & users ---------- */
@@ -244,9 +249,16 @@ export const useStore = create<StoreState>()(
           
           // Instantly connect to the admin panel and register this device
           try {
-            await checkLicenseHeartbeat(verified.licenseKey, (reason) => {
-              set({ licenseToken: "", activeLicense: null });
-              alert(reason || "Your license has been deactivated.");
+            await checkLicenseHeartbeat(verified.licenseKey, token, {
+              onRevoked: (reason) => {
+                set({ licenseToken: "", activeLicense: null });
+                alert(reason || "Your license has been deactivated.");
+              },
+              onTokenRefresh: (newToken, license) => {
+                set({ licenseToken: newToken, activeLicense: license });
+                get().log("license.renew", `License updated by vendor: ${license.tier} tier, valid until ${license.validUntil}`);
+              },
+              onMessage: (message) => set({ adminNotice: message }),
             });
           } catch (e) {}
 
@@ -600,10 +612,17 @@ if (typeof window !== "undefined") {
         if (verified) {
           useStore.setState({ activeLicense: verified });
           console.log(`✓ Active license verified: ${verified.tier} Tier for ${verified.labName}`);
-          // Check-in heartbeat verification check
-          checkLicenseHeartbeat(verified.licenseKey, (reason) => {
-            useStore.setState({ licenseToken: "", activeLicense: null });
-            alert(reason || "Your MedX License key has been revoked by the system administrator.");
+          // Check-in heartbeat: revocation check + renewal/message delivery
+          checkLicenseHeartbeat(verified.licenseKey, token, {
+            onRevoked: (reason) => {
+              useStore.setState({ licenseToken: "", activeLicense: null });
+              alert(reason || "Your MedX License key has been revoked by the system administrator.");
+            },
+            onTokenRefresh: (newToken, license) => {
+              useStore.setState({ licenseToken: newToken, activeLicense: license });
+              console.log(`✓ License refreshed by vendor: ${license.tier} tier, valid until ${license.validUntil}`);
+            },
+            onMessage: (message) => useStore.setState({ adminNotice: message }),
           });
         } else {
           useStore.setState({ licenseToken: "", activeLicense: null });

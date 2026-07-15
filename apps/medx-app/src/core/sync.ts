@@ -1,5 +1,6 @@
 import { useStore } from "../data/store";
 import { COMMON_TESTS } from "../catalog";
+import { checkLicenseHeartbeat } from "./licensing";
 
 const WEB_URL = "https://medx-web-one.vercel.app";
 
@@ -132,6 +133,24 @@ export async function pullWebBookings(): Promise<number> {
   }
 }
 
+/** Periodic license check-in: revocation, renewals, and vendor messages. */
+async function runHeartbeat() {
+  const state = useStore.getState();
+  const license = state.activeLicense;
+  if (!license || !state.licenseToken) return;
+  await checkLicenseHeartbeat(license.licenseKey, state.licenseToken, {
+    onRevoked: (reason) => {
+      useStore.setState({ licenseToken: "", activeLicense: null });
+      alert(reason || "Your MedX License key has been revoked by the system administrator.");
+    },
+    onTokenRefresh: (newToken, refreshed) => {
+      useStore.setState({ licenseToken: newToken, activeLicense: refreshed });
+      console.log(`✓ License refreshed by vendor: ${refreshed.tier} tier, valid until ${refreshed.validUntil}`);
+    },
+    onMessage: (message) => useStore.setState({ adminNotice: message }),
+  });
+}
+
 let debounceTimeout: any = null;
 
 export function startSyncEngine() {
@@ -141,6 +160,7 @@ export function startSyncEngine() {
   syncInterval = setInterval(() => {
     forceCloudSync();
     pullWebBookings();
+    runHeartbeat();
   }, 5 * 60 * 1000);
 
   // Trigger instant sync (debounced) when orders or patients change

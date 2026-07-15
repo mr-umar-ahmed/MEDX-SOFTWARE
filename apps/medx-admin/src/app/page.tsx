@@ -1,11 +1,12 @@
-import { TrendingUp, Users, AlertCircle, CheckCircle } from "lucide-react";
-import { getLicenses, getTickets } from "@/lib/adminDb";
+import { TrendingUp, Users, AlertCircle, CheckCircle, Wallet } from "lucide-react";
+import { getLicenses, getTickets, getPayments } from "@/lib/adminDb";
 
 export const revalidate = 5; // Keep data fresh (every 5 seconds)
 
 export default async function DashboardPage() {
   const licenses = await getLicenses();
   const tickets = await getTickets();
+  const payments = await getPayments();
 
   const now = new Date();
   const thirtyDaysFromNow = new Date();
@@ -17,11 +18,16 @@ export default async function DashboardPage() {
   );
 
   // Compute MRR dynamically based on active subscription tiers
+  // (Pro ₹499/mo, Enterprise ₹1,499/mo per the pricing plan)
   const mrr = activeLicenses.reduce((sum, l) => {
-    if (l.tier === "Pro") return sum + 150;
-    if (l.tier === "Enterprise") return sum + 450;
-    return sum; // Starter is free
+    if (l.tier === "Pro") return sum + 499;
+    if (l.tier === "Enterprise") return sum + 1499;
+    return sum; // Starter has no monthly fee
   }, 0);
+
+  // Real collected revenue from the payments ledger (stored in paise)
+  const collectedRupees = Math.round(payments.reduce((sum, p) => sum + (p.amountPaidPaise || 0), 0) / 100);
+  const totalDevices = licenses.reduce((sum, l) => sum + (l.devices?.length ?? 0), 0);
 
   // Expiring licenses within 30 days
   const expiringCount = activeLicenses.filter((l) => {
@@ -58,8 +64,18 @@ export default async function DashboardPage() {
             <h3 style={{ fontSize: 14, color: "var(--muted)", margin: 0 }}>Monthly Recurring Revenue</h3>
             <TrendingUp size={20} color="#10b981" />
           </div>
-          <div style={{ fontSize: 36, fontWeight: 800 }}>${mrr.toLocaleString()}</div>
+          <div style={{ fontSize: 36, fontWeight: 800 }}>₹{mrr.toLocaleString("en-IN")}</div>
           <div style={{ fontSize: 12, color: "#10b981", marginTop: 8 }}>Based on active Pro & Enterprise plans</div>
+        </div>
+
+        {/* Collected Revenue Card */}
+        <div style={{ background: "var(--surface)", padding: 24, borderRadius: 12, border: "1px solid var(--border)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            <h3 style={{ fontSize: 14, color: "var(--muted)", margin: 0 }}>Revenue Collected</h3>
+            <Wallet size={20} color="#10b981" />
+          </div>
+          <div style={{ fontSize: 36, fontWeight: 800 }}>₹{collectedRupees.toLocaleString("en-IN")}</div>
+          <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 8 }}>{payments.length} payment{payments.length === 1 ? "" : "s"} in the ledger</div>
         </div>
 
         {/* Active Deployments Card */}
@@ -69,7 +85,7 @@ export default async function DashboardPage() {
             <Users size={20} color="var(--primary)" />
           </div>
           <div style={{ fontSize: 36, fontWeight: 800 }}>{activeLicenses.length} Labs</div>
-          <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 8 }}>Total generated: {licenses.length}</div>
+          <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 8 }}>Total generated: {licenses.length} · {totalDevices} device{totalDevices === 1 ? "" : "s"} connected</div>
         </div>
 
         {/* Expiring Licenses Card */}
