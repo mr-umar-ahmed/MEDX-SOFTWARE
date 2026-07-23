@@ -53,8 +53,8 @@ export default function Settings() {
   }
 
   function handleDeactivate() {
-    if (confirm("Deactivating your license will revert the lab to the Starter free tier. Continue?")) {
-      useStore.setState({ licenseToken: "", activeLicense: null });
+    if (confirm("Deactivating your license will log you out and return to the License Activation screen. Continue?")) {
+      useStore.getState().logoutAndResetLicense();
     }
   }
 

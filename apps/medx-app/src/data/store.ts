@@ -143,6 +143,8 @@ interface StoreState {
   createOrder: (input: NewOrderInput) => Order;
   setResult: (orderId: string, testCode: string, analyteCode: string, value: string) => void;
   verifyOrder: (orderId: string) => void;
+  unlockOrder: (orderId: string) => void;
+  logoutAndResetLicense: () => void;
   addPayment: (orderId: string, p: Payment) => void;
   setSampleStatus: (orderId: string, testCode: string, status: SampleStatus) => void;
   markDelivered: (orderId: string, via: NonNullable<Order["deliveredVia"]>) => void;
@@ -484,6 +486,31 @@ export const useStore = create<StoreState>()(
           ),
         }));
         get().log("order.verify", get().orders.find((o) => o.id === orderId)?.invoiceNo ?? orderId);
+      },
+
+      unlockOrder: (orderId) => {
+        set((st) => ({
+          orders: st.orders.map((o) =>
+            o.id === orderId
+              ? { ...o, items: o.items.map((it) => ({ ...it, verified: false })), status: "in-process", verifiedAt: undefined, verifiedBy: undefined }
+              : o,
+          ),
+        }));
+        get().log("order.unlock", get().orders.find((o) => o.id === orderId)?.invoiceNo ?? orderId);
+      },
+
+      logoutAndResetLicense: () => {
+        if (typeof window !== "undefined" && window.medx?.removeStore) {
+          window.medx.removeStore("medx-store-v1");
+        }
+        localStorage.removeItem("medx-store-v1");
+        localStorage.removeItem("medx-device-id");
+        set({
+          licenseToken: "",
+          activeLicense: null,
+          adminNotice: null,
+          lastHeartbeat: null,
+        });
       },
 
       addPayment: (orderId, p) => {

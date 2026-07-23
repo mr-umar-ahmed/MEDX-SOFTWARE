@@ -55,6 +55,23 @@ function ResultsTab({ order }: { order: Order }) {
   const store = useStore();
   const allEntered = order.items.every((it) => it.results.every((r) => r.value !== ""));
 
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement | HTMLSelectElement>) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const inputs = Array.from(
+        document.querySelectorAll<HTMLInputElement | HTMLSelectElement>("input.result-field, select.result-field")
+      );
+      const idx = inputs.indexOf(e.currentTarget);
+      if (idx >= 0 && idx < inputs.length - 1) {
+        const next = inputs[idx + 1];
+        next.focus();
+        if (next instanceof HTMLInputElement) {
+          next.select();
+        }
+      }
+    }
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {order.items.map((it) => {
@@ -75,12 +92,12 @@ function ResultsTab({ order }: { order: Order }) {
                       <td>{analyte?.name ?? r.analyteCode}</td>
                       <td>
                         {analyte?.inputType === "select" ? (
-                          <select className="input" value={r.value} onChange={(e) => store.setResult(order.id, it.testCode, r.analyteCode, e.target.value)}>
+                          <select className="input result-field" value={r.value} onKeyDown={handleKeyDown} onChange={(e) => store.setResult(order.id, it.testCode, r.analyteCode, e.target.value)}>
                             <option value="">—</option>
                             {analyte.options?.map((o) => <option key={o}>{o}</option>)}
                           </select>
                         ) : (
-                          <input className="input mono" value={r.value} placeholder={analyte?.defaultText ?? ""} onChange={(e) => store.setResult(order.id, it.testCode, r.analyteCode, e.target.value)} />
+                          <input className="input mono result-field" value={r.value} placeholder={analyte?.defaultText ?? ""} onKeyDown={handleKeyDown} onChange={(e) => store.setResult(order.id, it.testCode, r.analyteCode, e.target.value)} />
                         )}
                       </td>
                       <td className="muted">{r.unit ?? analyte?.unit ?? ""}</td>
@@ -96,11 +113,14 @@ function ResultsTab({ order }: { order: Order }) {
       })}
       <div className="card card-pad" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div className="muted">{allEntered ? "All results entered. Verify to lock the report." : "Enter all results, then verify."}</div>
-        <div className="row">
+        <div className="row" style={{ alignItems: "center" }}>
           {order.status !== "reported" ? (
             <button className="btn btn-primary btn-lg" disabled={!allEntered} onClick={() => store.verifyOrder(order.id)}>✓ Verify &amp; Lock Report</button>
           ) : (
-            <span className="badge badge-ok">Verified {order.verifiedAt ? "on " + fmtDate(order.verifiedAt) : ""}</span>
+            <>
+              <span className="badge badge-ok">Verified {order.verifiedAt ? "on " + fmtDate(order.verifiedAt) : ""}</span>
+              <button className="btn" style={{ marginLeft: 12 }} onClick={() => store.unlockOrder(order.id)}>✏ Unlock to Edit Report</button>
+            </>
           )}
         </div>
       </div>

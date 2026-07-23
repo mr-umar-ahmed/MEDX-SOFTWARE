@@ -72,15 +72,15 @@ export default function PortalPage() {
               )}
               
               <div className="form-group">
-                <label className="form-label">Invoice / Order Number</label>
-                <input required type="text" className="input" placeholder="e.g. MEDX-2610-0012" value={invoice} onChange={(e) => setInvoice(e.target.value)} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Registered Phone Number</label>
+                <label className="form-label">Registered Mobile Phone Number</label>
                 <input required type="tel" className="input" placeholder="Enter 10-digit mobile number" value={phone} onChange={(e) => setPhone(e.target.value)} />
               </div>
+              <div className="form-group">
+                <label className="form-label">Invoice / Order Number <span style={{ opacity: 0.65, fontWeight: "normal" }}>(Optional)</span></label>
+                <input type="text" className="input" placeholder="e.g. MEDX-2610-0012" value={invoice} onChange={(e) => setInvoice(e.target.value)} />
+              </div>
               <button type="submit" className="btn btn-primary btn-block" style={{ marginTop: 8 }} disabled={loading}>
-                {loading ? "Verifying OTP..." : "Access Reports"}
+                {loading ? "Searching Records..." : "Access Patient Reports & History"}
               </button>
             </form>
           </div>

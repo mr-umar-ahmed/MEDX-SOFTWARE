@@ -55,44 +55,63 @@ export async function verifyAndFetchReport(invoiceNo: string, phone: string) {
     const directory = await getDirectory();
     const labs = await getSyncedLabDocs();
 
-    let foundOrder: any = null;
+    const cleanInputPhone = phone.replace(/\D/g, "");
+    if (cleanInputPhone.length < 10) {
+      return { error: "Please enter a valid 10-digit registered mobile number." };
+    }
+
     let foundPatient: any = null;
     let foundLab: LabDocument | null = null;
 
-    for (const lab of labs) {
-      // Hide labs whose license was revoked after their last sync
-      const dirEntry = directory.find((d) => d.id === lab.licenseKey);
-      if (dirEntry && dirEntry.status !== "active") continue;
+    // 1. If invoice number is provided, try invoice matching first
+    if (invoiceNo && invoiceNo.trim()) {
+      const cleanInv = invoiceNo.trim().toUpperCase();
+      for (const lab of labs) {
+        const dirEntry = directory.find((d) => d.id === lab.licenseKey);
+        if (dirEntry && dirEntry.status !== "active") continue;
 
-      const order = lab.orders?.find(
-        (o: any) => o.invoiceNo?.trim().toUpperCase() === invoiceNo.trim().toUpperCase()
-      );
-      if (order) {
-        foundOrder = order;
-        foundLab = lab;
-        foundPatient = lab.patients?.find((p: any) => p.id === order.patientId);
-        break;
+        const order = lab.orders?.find(
+          (o: any) => o.invoiceNo?.trim().toUpperCase() === cleanInv
+        );
+        if (order) {
+          const patient = lab.patients?.find((p: any) => p.id === order.patientId);
+          if (patient) {
+            const cleanPatientPhone = String(patient.phone || "").replace(/\D/g, "");
+            if (cleanPatientPhone.slice(-10) === cleanInputPhone.slice(-10)) {
+              foundPatient = patient;
+              foundLab = lab;
+              break;
+            }
+          }
+        }
       }
     }
 
-    if (!foundOrder) {
-      return { error: "Invalid Invoice Number." };
-    }
-
+    // 2. If no direct invoice match, search patient records by mobile number
     if (!foundPatient) {
-      return { error: "Patient record not found." };
+      for (const lab of labs) {
+        const dirEntry = directory.find((d) => d.id === lab.licenseKey);
+        if (dirEntry && dirEntry.status !== "active") continue;
+
+        const patient = lab.patients?.find((p: any) => {
+          const cleanP = String(p.phone || "").replace(/\D/g, "");
+          return cleanP.slice(-10) === cleanInputPhone.slice(-10);
+        });
+
+        if (patient) {
+          foundPatient = patient;
+          foundLab = lab;
+          break;
+        }
+      }
     }
 
-    // Normalize phone numbers for matching
-    const cleanInputPhone = phone.replace(/\D/g, "");
-    const cleanPatientPhone = String(foundPatient.phone || "").replace(/\D/g, "");
-
-    if (cleanPatientPhone.slice(-10) !== cleanInputPhone.slice(-10)) {
-      return { error: "Phone number does not match our records for this invoice." };
+    if (!foundPatient || !foundLab) {
+      return { error: "No report records found matching this mobile number or invoice." };
     }
 
-    // All orders for this patient from the same lab (report history)
-    const patientOrders = (foundLab!.orders || [])
+    // Retrieve all historical orders for this patient from the lab
+    const patientOrders = (foundLab.orders || [])
       .filter((o: any) => o.patientId === foundPatient.id)
       .sort(
         (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -100,6 +119,7 @@ export async function verifyAndFetchReport(invoiceNo: string, phone: string) {
 
     return {
       success: true,
+      labName: foundLab.settings?.name || "Diagnostic Laboratory",
       patient: foundPatient,
       orders: patientOrders,
     };

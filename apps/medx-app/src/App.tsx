@@ -83,15 +83,19 @@ export default function App() {
     }
   }
 
-  // Intercept layout if there is no active license registered
-  if (!activeLicense) {
+  const isExpired = activeLicense ? new Date() > new Date(activeLicense.validUntil) : false;
+
+  // Intercept layout if there is no active license or license has expired
+  if (!activeLicense || isExpired) {
     return (
       <div style={{
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         minHeight: "100vh",
-        background: "radial-gradient(circle at 10% 20%, rgb(4, 159, 108) 0%, rgb(194, 254, 113) 90.1%)",
+        background: isExpired 
+          ? "radial-gradient(circle at 10% 20%, rgb(239, 68, 68) 0%, rgb(248, 113, 113) 90.1%)"
+          : "radial-gradient(circle at 10% 20%, rgb(4, 159, 108) 0%, rgb(194, 254, 113) 90.1%)",
         fontFamily: "Inter, system-ui, -apple-system, sans-serif",
         padding: 24,
         boxSizing: "border-box"
@@ -107,10 +111,14 @@ export default function App() {
           boxShadow: "0 20px 45px rgba(0, 0, 0, 0.12)",
           textAlign: "center"
         }}>
-          <div style={{ fontSize: 56, marginBottom: 16 }}>🔑</div>
-          <h1 style={{ fontSize: 30, fontWeight: 900, color: "#0f172a", margin: "0 0 10px 0", letterSpacing: "-0.5px" }}>MedX LIMS Activation</h1>
+          <div style={{ fontSize: 56, marginBottom: 16 }}>{isExpired ? "⏰" : "🔑"}</div>
+          <h1 style={{ fontSize: 28, fontWeight: 900, color: "#0f172a", margin: "0 0 10px 0", letterSpacing: "-0.5px" }}>
+            {isExpired ? "MedX License Expired" : "MedX LIMS Activation"}
+          </h1>
           <p style={{ fontSize: 14.5, color: "#64748b", margin: "0 0 32px 0", lineHeight: 1.5 }}>
-            Welcome to MedX. A valid signed license key is required to use this software. Please enter your license token below to activate.
+            {isExpired 
+              ? `Your ${activeLicense?.tier} subscription for ${activeLicense?.labName} expired on ${new Date(activeLicense!.validUntil).toLocaleDateString()}. Please enter a renewed license token to unlock.`
+              : "Welcome to MedX. A valid signed license key is required to use this software. Please enter your license token below to activate."}
           </p>
 
           <div style={{ textAlign: "left", marginBottom: 24 }}>

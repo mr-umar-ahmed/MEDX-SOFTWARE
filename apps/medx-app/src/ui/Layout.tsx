@@ -168,7 +168,8 @@ export default function Layout() {
           <div>
             <div style={{ color: "#cbd5e1", fontWeight: 700 }}>{settings.name}</div>
             <div style={{ color: "#64748b" }}>v0.2.0 · ● {activeLicense ? `${activeLicense.tier} Tier` : "Working offline"}</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, marginTop: 4, color: "#64748b" }}>
+            {activeLicense?.validUntil && <LicenseTimer validUntil={activeLicense.validUntil} />}
+            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, marginTop: 6, color: "#64748b" }}>
               <div style={{ width: 8, height: 8, borderRadius: "50%", background: isCloudSynced ? "#10b981" : "#ef4444" }} />
               {isCloudSynced ? "Cloud Data Synced" : "Pending Cloud Sync"}
             </div>
@@ -208,6 +209,55 @@ function LockedScreen({ requiredTier }: { requiredTier: string }) {
           <NavLink to="/settings" className="btn btn-primary">Activate License Key</NavLink>
         </div>
       </div>
+    </div>
+  );
+}
+
+function LicenseTimer({ validUntil }: { validUntil: string }) {
+  const [timeLeft, setTimeLeft] = React.useState<string>("");
+  const [isUrgent, setIsUrgent] = React.useState<boolean>(false);
+
+  React.useEffect(() => {
+    function update() {
+      const diff = new Date(validUntil).getTime() - Date.now();
+      if (diff <= 0) {
+        setTimeLeft("Expired");
+        setIsUrgent(true);
+        return;
+      }
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const mins = Math.floor((diff / (1000 * 60)) % 60);
+
+      setIsUrgent(days < 3);
+      if (days > 0) {
+        setTimeLeft(`${days}d ${hours}h left`);
+      } else {
+        setTimeLeft(`${hours}h ${mins}m left`);
+      }
+    }
+    update();
+    const interval = setInterval(update, 30000);
+    return () => clearInterval(interval);
+  }, [validUntil]);
+
+  if (!timeLeft) return null;
+
+  return (
+    <div style={{
+      fontSize: 11,
+      fontWeight: 700,
+      marginTop: 6,
+      padding: "3px 8px",
+      borderRadius: 6,
+      background: isUrgent ? "#fee2e2" : "#ecfdf5",
+      color: isUrgent ? "#b91c1c" : "#047857",
+      border: `1px solid ${isUrgent ? "#fca5a5" : "#a7f3d0"}`,
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 4
+    }}>
+      ⏳ License: {timeLeft}
     </div>
   );
 }

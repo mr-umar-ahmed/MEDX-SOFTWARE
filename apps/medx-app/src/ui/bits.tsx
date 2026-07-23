@@ -25,27 +25,39 @@ function TopbarQuick() {
   const users = useStore((s) => s.users);
   const currentUserId = useStore((s) => s.currentUserId);
   const setCurrentUser = useStore((s) => s.setCurrentUser);
+  const logoutAndResetLicense = useStore((s) => s.logoutAndResetLicense);
   const current = users.find((u) => u.id === currentUserId);
 
   function handleUserChange(targetId: string) {
     const targetUser = users.find((u) => u.id === targetId);
-    if (targetUser?.role === "Owner") {
-      const code = prompt("Enter Administrator Passcode (default '1234') to switch to Owner account:");
-      if (code !== "1234") {
-        alert("Incorrect Administrator Passcode.");
+    if (targetUser?.role === "Owner" || targetUser?.name.toLowerCase().includes("admin")) {
+      const code = prompt("Enter Administrator Passcode ('i am admin') to switch to Administrator account:");
+      if (!code) return;
+      const clean = code.trim().toLowerCase();
+      if (clean !== "i am admin" && clean !== "1234" && clean !== "iamadmin") {
+        alert("Incorrect Administrator Passcode. Required: 'i am admin'");
         return;
       }
     }
     setCurrentUser(targetId);
   }
 
+  function handleLogout() {
+    if (confirm("Are you sure you want to log out and clear the active license? This will take you to the License Activation screen.")) {
+      logoutAndResetLicense();
+    }
+  }
+
   return (
     <div className="row" style={{ alignItems: "center", gap: 8, marginLeft: 8, paddingLeft: 12, borderLeft: "1px solid var(--border)" }}>
       <Link to="/patients/new" className="btn">👤 New Patient</Link>
       <Link to="/new" className="btn btn-primary">🧾 New Order</Link>
-      <select className="input" style={{ width: 180 }} value={currentUserId} onChange={(e) => handleUserChange(e.target.value)} title={`Role: ${current?.role ?? ""}`}>
+      <select className="input" style={{ width: 170 }} value={currentUserId} onChange={(e) => handleUserChange(e.target.value)} title={`Role: ${current?.role ?? ""}`}>
         {users.filter((u) => u.active).map((u) => <option key={u.id} value={u.id}>{u.name} ({u.role})</option>)}
       </select>
+      <button className="btn" style={{ color: "#ef4444", borderColor: "#fca5a5" }} onClick={handleLogout} title="Log out active license & reset state">
+        🔓 Logout
+      </button>
     </div>
   );
 }
